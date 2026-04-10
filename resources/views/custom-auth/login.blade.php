@@ -76,7 +76,7 @@
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-envelope text-slate-400 text-sm"></i>
               </div>
-              <input type="email" id="email" name="email" value="demo@flowsaas.com"
+              <input type="email" id="email" name="email" value="test@example.com"
                 class="w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-slate-800 text-sm"
                 placeholder="admin@flowsaas.com" autocomplete="email">
             </div>
@@ -91,7 +91,7 @@
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-lock text-slate-400 text-sm"></i>
               </div>
-              <input type="password" id="password" name="password" value="demo123"
+              <input type="password" id="password" name="password" value="ngocmy01"
                 class="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-slate-800 text-sm"
                 placeholder="••••••••" autocomplete="current-password">
               <button type="button" id="togglePasswordBtn" class="toggle-pwd-btn absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-indigo-600 transition">

@@ -16,9 +16,33 @@ class TenantController extends Controller
         $this->tenantService = $tenantService; 
     }
 
+    public function index(){
+        return view('admin.pages.tenant.index');
+    }
+
     public function store(StoreTenantRequest $request){
         $tenant = $this->tenantService->createTenant($request->validate()); 
 
         return redirect()->to('dashboard')->with('success', 'Tạo tenant thành công'); 
+    }
+
+    public function show(){
+        
+    }
+
+    public function update(){
+        echo "update"; 
+    }
+
+    public function destroy(){
+        echo "destroy"; 
+    }   
+
+    public function create(){
+        return view('admin.pages.tenant.create');
+    }
+
+    public function edit(){
+        echo "edit page"; 
     }
 }
