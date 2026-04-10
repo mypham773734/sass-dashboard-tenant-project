@@ -39,8 +39,9 @@
                 <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Add Tenant</a>
                 <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">All Tenants</a>
             </div>
-
         </div>
+
+        @livewire('tenant-switcher')
 
 
         <!-- Avatar small for mobile/desktop -->
