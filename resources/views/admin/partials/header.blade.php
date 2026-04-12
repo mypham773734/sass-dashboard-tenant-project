@@ -18,6 +18,10 @@
 
     <!-- Right: search & notifications & avatar -->
     <div class="flex items-center gap-5">
+        @if(session('message'))
+        <p>{{ session('message') }}</p>
+        @endif
+        <livewire:tenant-switcher />
         <!-- Search bar (desktop) -->
         <div class="hidden md:flex items-center bg-slate-50 rounded-full px-4 py-2 gap-2 border border-slate-200">
             <i class="fas fa-search text-slate-400 text-sm"></i>
@@ -30,7 +34,7 @@
         </button>
 
         <!-- Dropdown action menu -->
-        <div class="relative">
+        <!-- <div class="relative">
             <button id="dropdownMenuBtn" class="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition rounded-full px-3 py-2 text-sm font-medium">
                 Tenant
                 <i class="fas fa-chevron-down text-xs"></i>
@@ -39,13 +43,10 @@
                 <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Add Tenant</a>
                 <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">All Tenants</a>
             </div>
-        </div>
-
-        @livewire('tenant-switcher')
-
+        </div> -->
 
         <!-- Avatar small for mobile/desktop -->
-        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-semibold text-sm shadow">
+        <div class="w-9 h-9 min-w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-semibold text-sm shadow">
             JD
         </div>
     </div>

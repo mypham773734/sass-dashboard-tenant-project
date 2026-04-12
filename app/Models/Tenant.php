@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Project; 
+use App\Models\Scopes\TenantScope; 
 
 class Tenant extends Model
 {
@@ -11,14 +12,18 @@ class Tenant extends Model
         'name',
         'slug',
         'is_active',
-        'trial_end_at',
-        'settings',
+        'trial_ends_at',
+        // 'settings',
     ];
+
+    public static function booted(){
+        static::addGlobalScope(new TenantScope); 
+    }
 
     // Quan hệ N - N: 1 tenant có nhiều user
     public function users()
     {
-        $this->belongsToMany(User::class, 'tenant_user', 'user_id', 'tenant_id')
+        return $this->belongsToMany(User::class, 'tenant_user', 'tenant_id', 'user_id')
             ->withPivot('role')
             ->withTimestamps();
     }

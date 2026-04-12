@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     @stack('styles')
+    @livewireStyles
 </head>
 
 <body class="font-sans antialiased">
@@ -39,10 +40,14 @@
         'resources/sass/app.scss'
     ])
 
-    @vite('resources/js/bases/index.js')
+    @vite('resources/js/bases/index.js'); 
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @stack('script')
     @stack('scripts')
+    @livewireScripts
 </body>
 
 </html>

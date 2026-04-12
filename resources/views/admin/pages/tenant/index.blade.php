@@ -63,42 +63,68 @@
                 <table class="w-full">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Người dùng</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Vai trò</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Slug</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng thái</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trial Ends At</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ngày tạo</th>
                             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="divide-y divide-gray-200">
-                        <!-- Data will be inserted here by JS -->
+                        @if(isset($tenants) && $tenants->count() > 0)
+                        @foreach($tenants as $tenant)
+                        <tr>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->id }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->name }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->slug }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->is_active }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->trial_ends_at }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->created_at }}</td>
+                            <td class="px-6 py-3 text-right text-xs text-gray-600 uppercase tracking-wider">
+                                <button class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                <!-- Nút Xóa -->
+                                <button class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                        @endif
                     </tbody>
                 </table>
             </div>
             <!-- Empty State -->
-            <div id="empty-state" class="hidden py-12 text-center">
+            @if(!isset($tenants) || $tenants->count() < 1)
+                <div id="empty-state" class="hidden py-12 text-center">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">Không tìm thấy dữ liệu</h3>
                 <p class="mt-1 text-sm text-gray-500">Thử thay đổi bộ lọc hoặc thêm mục mới.</p>
+        </div>
+        @endif
+        <!-- Pagination -->
+        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+                Hiển thị <span id="showing-count">1-10</span> trên tổng <span id="total-count">24</span>
             </div>
-            <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div class="text-sm text-gray-500">
-                    Hiển thị <span id="showing-count">1-10</span> trên tổng <span id="total-count">24</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button disabled class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Trước</button>
-                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">1</button>
-                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
-                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">3</button>
-                    <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Sau</button>
-                </div>
+            <div class="flex items-center gap-2">
+                <button disabled class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Trước</button>
+                <button class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium">1</button>
+                <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">2</button>
+                <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">3</button>
+                <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Sau</button>
             </div>
         </div>
     </div>
+    </div>
 
 </main>
+
+<x-modal></x-modal>
 @endsection

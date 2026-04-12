@@ -23,7 +23,17 @@ class StoreTenantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => [
+                'required', 
+            ], 
+            'slug' => [
+                'required', 
+                'unique:tenants,slug'
+            ], 
+            'trial_ends_at' =>[
+                'required', 
+                'date'
+            ]
         ];
     }
 }

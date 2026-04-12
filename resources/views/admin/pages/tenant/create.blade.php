@@ -1,5 +1,10 @@
 @extends('admin.layouts.app');
 
+@push('script')
+@vite('resources/js/pages/tenant.js')
+@endpush
+
+
 @section('content')
 <main class="flex-1 overflow-y-auto p-5 md:p-7 bg-gradient-to-b from-slate-50 to-white">
     <!-- Create New Page -->
@@ -11,53 +16,34 @@
                 </svg>
             </button>
             <div>
-                <h3 class="text-2xl font-bold text-gray-900">Thêm người dùng mới</h3>
-                <p class="text-gray-500 mt-1">Tạo tài khoản cho người dùng mới trong hệ thống</p>
+                <h3 class="text-2xl font-bold text-gray-900">Add New Tenant</h3>
+                <p class="text-gray-500 mt-1">Tạo tenant mới cho hệ thống</p>
             </div>
         </div>
 
-        <form id="create-form" onsubmit="handleCreateSubmit(event)" class="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <form id="create-form" method="POST" action="{{ route('tenant.store') }}" class="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Họ tên <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" required placeholder="Nguyễn Văn A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" autocomplete="FALSE" required placeholder="Cty A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
-                    <input type="email" name="email" required placeholder="nguyenvana@example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Mật khẩu <span class="text-red-500">*</span></label>
-                    <input type="password" name="password" required placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                    <input type="tel" name="phone" placeholder="0912345678" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <label class="block text-sm font-medium text-gray-700">Slug <span class="text-red-500">*</span></label>
+                    <input type="text" name="slug" required placeholder="cty-a" class="opacity-50 cursor-not-allowed pointer-events-none w-full px-3 py-2 border border-gray-300 rounded-lg text-disable focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Vai trò <span class="text-red-500">*</span></label>
-                    <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="">Chọn vai trò</option>
-                        <option value="user">Người dùng</option>
-                        <option value="manager">Quản lý</option>
-                        <option value="admin">Admin</option>
+                    <select name="is_active" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                        <option value="1">Active</option>
+                        <option value="0">No Active</option>
                     </select>
                 </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Trạng thái <span class="text-red-500">*</span></label>
-                    <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="">Chọn trạng thái</option>
-                        <option value="active">Hoạt động</option>
-                        <option value="pending">Chờ duyệt</option>
-                        <option value="inactive">Không hoạt động</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">Ghi chú</label>
-                <textarea name="notes" rows="3" placeholder="Thông tin thêm về người dùng..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></textarea>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Trial End at <span class="text-red-500">*</span></label>
+                    <input type="date" name="trial_ends_at" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
             </div>
 
             <div class="flex items-center gap-3 pt-4 border-t border-gray-100">

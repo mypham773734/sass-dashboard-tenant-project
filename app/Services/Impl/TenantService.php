@@ -3,11 +3,14 @@
 namespace App\Services\Impl; 
 
 use App\Services\Contracts\TenantServiceInterface;
+use App\DTOs\Tenants\CreateTenantDTO;
+use App\Models\Tenant; 
 
 class TenantService implements TenantServiceInterface{
-    public function createTenant(array $data)
+    public function createTenant(CreateTenantDTO $dto)
     {
-        throw new \Exception('Not implemented');
+        $data = $dto->toArray(); 
+        return Tenant::create($data);
     }
 
     public function addUserToTenant(int $tenantId, int $userId, string $role = 'admin')

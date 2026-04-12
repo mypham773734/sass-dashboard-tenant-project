@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 
 use App\Services\Contracts\TenantServiceInterface; 
 use App\Http\Requests\StoreTenantRequest; 
+use App\DTOs\Tenants\CreateTenantDTO;
+use App\Models\Tenant;
 
 class TenantController extends Controller
 {
@@ -17,13 +19,27 @@ class TenantController extends Controller
     }
 
     public function index(){
-        return view('admin.pages.tenant.index');
+        $tenants = Tenant::all(); 
+        return view('admin.pages.tenant.index', [
+            'tenants' => $tenants
+        ]);
     }
 
     public function store(StoreTenantRequest $request){
-        $tenant = $this->tenantService->createTenant($request->validate()); 
+        try {
+            $dto = CreateTenantDTO::fromArray($request->all());
+            $tenant = $this->tenantService->createTenant($dto);
 
-        return redirect()->to('dashboard')->with('success', 'Tạo tenant thành công'); 
+            $user = $request->user(); 
+
+            $tenant->users()->attach($user->id, ['role' => 'admin']); 
+
+            return redirect()->back()->with('success', 'Tạo tenant thành công');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Lỗi tạo tenant: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     public function show(){
