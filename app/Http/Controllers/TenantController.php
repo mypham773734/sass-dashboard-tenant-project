@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Services\Contracts\TenantServiceInterface; 
 use App\Http\Requests\StoreTenantRequest; 
 use App\DTOs\Tenants\CreateTenantDTO;
@@ -19,10 +17,8 @@ class TenantController extends Controller
     }
 
     public function index(){
-        $tenants = Tenant::all(); 
-        return view('admin.pages.tenant.index', [
-            'tenants' => $tenants
-        ]);
+        $tenants = Tenant::paginate(10); 
+        return view('admin.pages.tenant.index', compact('tenants'));
     }
 
     public function store(StoreTenantRequest $request){
@@ -46,19 +42,48 @@ class TenantController extends Controller
         
     }
 
-    public function update(){
-        echo "update"; 
+    public function update(string $tenantSlug){
+        try {
+            $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
+
+            $dto = CreateTenantDTO::fromArray(request()->all());
+            $tenant = $this->tenantService->updateTenant($tenant, $dto);
+
+            return view('admin.pages.tenant.create', compact('tenant'));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Lỗi cập nhật tenant: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
-    public function destroy(){
-        echo "destroy"; 
-    }   
+    public function destroy(string $tenantSlug){
+        try {
+            $userId = Auth()->id;
+            $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
+
+            $selectedCurrentTenantId = session('current_tenant_id'); 
+            if($selectedCurrentTenantId === $tenant->id){
+                return redirect()->back()
+                    ->with('error', 'Bạn không thể xóa tenant đang chọn làm tenant hiện tại');
+            }           
+
+            $result = $this->tenantService->deleteTenant($tenant, $userId);
+
+            return redirect()->back()->with('success', 'Xóa tenant thành công');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Lỗi xóa tenant: ' . $e->getMessage());
+        }
+    }
 
     public function create(){
         return view('admin.pages.tenant.create');
     }
 
-    public function edit(){
-        echo "edit page"; 
+    public function edit(string $tenantSlug){
+        $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
+
+        return view('admin.pages.tenant.create', compact('tenant'));
     }
 }

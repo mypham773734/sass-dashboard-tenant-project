@@ -1,4 +1,4 @@
-@props(['id' => 1, 'title' => 'Test pupop', 'maxWidth' => 'md', 'show' => true])
+@props(['id' => 1, 'title' => 'Test pupop', 'maxWidth' => 'md', 'show' => false])
 
 @php
 $maxWidthClass = [

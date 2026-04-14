@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
 use App\Http\Controllers\TenantController;
 
-require __DIR__ . '/auth.php';
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -42,5 +42,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/custom-logout', [AuthenticatedSessionController::class, 'destroy'])->name('custom-login.destroy');
     
         Route::resource('/tenant', TenantController::class);
+        Route::resource('/project', TenantController::class);
     });
 });
+
+
+require __DIR__ . '/auth.php';
