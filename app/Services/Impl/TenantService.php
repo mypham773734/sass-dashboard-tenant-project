@@ -10,7 +10,11 @@ use Illuminate\Support\Facades\DB;
 class TenantService implements TenantServiceInterface
 {
     public function getTenants($limit = 10){
-        
+        if($limit == -1){
+            return Tenant::get(); 
+        }
+
+        return Tenant::paginate(10);
     }
     public function createTenant(CreateTenantDTO $dto)
     {

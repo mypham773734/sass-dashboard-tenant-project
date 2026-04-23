@@ -17,9 +17,7 @@ class TenantController extends Controller
     }
 
     public function index(){
-        $tenants = Tenant::paginate(10); 
-
-        $data = $tenants; 
+        $tenants = $this->tenantService->getTenants(10); 
         return view('admin.pages.tenant.index', compact('tenants'));
     }
 
