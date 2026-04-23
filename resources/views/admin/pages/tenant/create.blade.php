@@ -1,5 +1,7 @@
 <?php 
-    echo json_encode($tenant);
+    if(isset($tenant)){
+        echo json_encode($tenant);
+    }
     // die(); 
 ?>
 

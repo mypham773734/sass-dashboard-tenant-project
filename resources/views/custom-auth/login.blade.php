@@ -67,7 +67,7 @@
         </div>
 
         <!-- Login Form -->
-        <form id="loginForm" action="{{ route('custom-login.store') }}" method="POST" class="space-y-5">
+        <form id="loginForm" action="{{ route('login.store') }}" method="POST" class="space-y-5">
           @csrf
           <!-- Email Field -->
           <div>

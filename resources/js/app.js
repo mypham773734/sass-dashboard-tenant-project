@@ -7,4 +7,5 @@ Object.values(import.meta.glob('./pages/**/*.js', { eager: true }));
 
 window.Alpine = Alpine;
 
+// Initialize Alpine
 Alpine.start();

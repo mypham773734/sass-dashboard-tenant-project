@@ -25,7 +25,7 @@
         <!-- Search bar (desktop) -->
         <div class="hidden md:flex items-center bg-slate-50 rounded-full px-4 py-2 gap-2 border border-slate-200">
             <i class="fas fa-search text-slate-400 text-sm"></i>
-            <input type="text" placeholder="Search projects..." class="bg-transparent text-sm outline-none w-48 placeholder:text-slate-400">
+            <input type="text" placeholder="Search projects..." class="bg-transparent text-sm border-none outline-none w-48 placeholder:text-slate-400 focus:shadow-none">
         </div>
         <!-- Notification bell -->
         <button class="relative text-slate-500 hover:text-indigo-600 transition">
