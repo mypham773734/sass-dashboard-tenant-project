@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class TenantService implements TenantServiceInterface
 {
+    public function getTenants($limit = 10){
+        
+    }
     public function createTenant(CreateTenantDTO $dto)
     {
         $data = $dto->toArray();

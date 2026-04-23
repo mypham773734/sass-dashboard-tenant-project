@@ -23,5 +23,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Contracts\TenantServiceInterface::class, 
             \App\Services\Impl\TenantService::class
         ); 
+
+        $this->app->bind(
+            \App\Services\Contracts\ProjectServiceInterface::class, 
+            \App\Services\Impl\ProjectService::class
+        ); 
     }
 }

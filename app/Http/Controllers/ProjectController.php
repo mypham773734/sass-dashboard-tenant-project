@@ -6,9 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\Project; 
 use App\Http\Requests\StoreProjectRequest; 
 use App\Http\Requests\UpdateProjectRequest; 
+use App\Services\Contracts\ProjectServiceInterface; 
 
 class ProjectController extends Controller
 {
+    protected $projectService; 
+    protected $tenantService; 
+
+    public function __construct(ProjectServiceInterface $projectService)
+    {
+        $this->projectService = $projectService; 
+    }
+
     public function index()
     {
         $projects = Project::paginate(10);
