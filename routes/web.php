@@ -11,15 +11,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Route::get('/dashboard', function () {
-//     return view('dashboard');
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
-// Route::middleware('auth')->group(function () {
-//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-// });
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -29,16 +20,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/', function () {
-            // echo "dashboard page"; 
-            // dd(session()->all()); 
-            // die(); 
-            // // dd(session()->getId());
-
-            // dd(base64_decode('eyJfdG9rZW4iOiJ5ZkZnelBtOHVSaDlQNUlvQnZmYlFtQVRja2FDNm1NRHlYQjZLT1phIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9kYXNoYm9hcmQiLCJyb3V0ZSI6ImRhc2hib2FyZCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjozfQ==')); 
             return view('admin.pages.dashboard.index');
         })->name('dashboard');
-
-
 
         Route::resource('/tenant', TenantController::class);
         Route::resource('/project', TenantController::class);
@@ -46,6 +29,3 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');
 });
-
-
-// require __DIR__ . '/auth.php';
