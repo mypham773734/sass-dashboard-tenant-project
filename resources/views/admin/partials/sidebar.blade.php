@@ -25,7 +25,7 @@
         </x-sidebar-link>
 
         <!-- Project -->
-        <x-sidebar-link route="#">
+        <x-sidebar-link route="project.index">
             <i class="fas fa-project-diagram w-5"></i>
             <span>Projects</span>
         </x-sidebar-link>

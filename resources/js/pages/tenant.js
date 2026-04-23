@@ -1,4 +1,6 @@
 (function () {
+
+
     const TenantPage = {
         init: () => {
             jQuery(document).on(
@@ -31,6 +33,10 @@
     };
 
     jQuery(document).ready(function () {
+        console.log("hello ca nha yeu cua kem"); 
         TenantPage.init();
     });
 })();
+
+
+console.log("hello ca nha yeu cua kem"); 

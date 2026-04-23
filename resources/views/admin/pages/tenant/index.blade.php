@@ -7,8 +7,8 @@
         <!-- Header + Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h3 class="text-2xl font-bold text-gray-900">Danh sách người dùng</h3>
-                <p class="text-gray-500 mt-1">Quản lý tất cả người dùng trong hệ thống</p>
+                <h3 class="text-2xl font-bold text-gray-900">Quản lý danh sách Tenant</h3>
+                <p class="text-gray-500 mt-1">Quản lý và cấu hình tất cả các đơn vị (tenant) trong hệ thống. Theo dõi trạng thái hoạt động, thông tin gói dịch vụ và tài nguyên riêng biệt của từng tổ chức.</p>
             </div>
             <a href="{{ route('tenant.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap font-medium">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

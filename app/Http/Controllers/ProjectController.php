@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Project; 
+use App\Http\Requests\StoreProjectRequest; 
+use App\Http\Requests\UpdateProjectRequest; 
 
 class ProjectController extends Controller
 {
     public function index()
     {
-        return view('admin.pages.project.index');
+        $projects = Project::paginate(10);
+        return view('admin.pages.project.index', compact('projects'));
     }
 
 
@@ -17,7 +21,7 @@ class ProjectController extends Controller
         return view('admin.pages.project.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreProjectRequest $request)
     {
         // Validate and store the project
         echo "store project";
@@ -35,7 +39,7 @@ class ProjectController extends Controller
         echo "edit project with id: " . $id;
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateProjectRequest $request, $id)
     {
         // Validate and update the project
         echo "update project with id: " . $id;

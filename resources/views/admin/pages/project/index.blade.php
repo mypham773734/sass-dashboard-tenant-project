@@ -7,10 +7,10 @@
         <!-- Header + Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h3 class="text-2xl font-bold text-gray-900">Danh sách người dùng</h3>
-                <p class="text-gray-500 mt-1">Quản lý tất cả người dùng trong hệ thống</p>
+                <h3 class="text-2xl font-bold text-gray-900">Danh sách Dự án</h3>
+                <p class="text-gray-500 mt-1">Quản lý và theo dõi toàn bộ các dự án trong hệ thống. Cấu hình tiến độ, phân bổ nguồn lực và giám sát hiệu suất thực hiện của từng dự án riêng biệt.</p>
             </div>
-            <a href="{{ route('tenant.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap font-medium">
+            <a href="{{ route('project.create') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap font-medium">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
@@ -75,22 +75,22 @@
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="divide-y divide-gray-200">
-                        @if(isset($tenants) && $tenants->count() > 0)
-                        @foreach($tenants as $tenant)
+                        @if(isset($projects) && $projects->count() > 0)
+                        @foreach($projects as $project)
                         <tr>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->id }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->name }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->slug }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->is_active }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->trial_ends_at }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->created_at }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->id }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->name }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->slug }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->is_active }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->trial_ends_at }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $project->created_at }}</td>
                             <td class="px-6 py-3 text-right text-xs text-gray-600 uppercase tracking-wider flex justify-end gap-2">
-                                <a href="{{route('tenant.edit', $tenant->slug)}}" class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition h-fit">
+                                <a href="{{route('tenant.edit', $project->slug)}}" class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition h-fit">
                                     <i class="fas fa-edit"></i>
                                 </a>
 
                                 <!-- Nút Xóa -->
-                                <form action="{{ route('tenant.destroy', $tenant->slug) }}" method="POST">
+                                <form action="{{ route('tenant.destroy', $project->slug) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
@@ -106,7 +106,7 @@
                 </table>
             </div>
             <!-- Empty State -->
-            @if(!isset($tenants) || $tenants->count() < 1)
+            @if(!isset($projects) || $projects->count() < 1)
                 <div id="empty-state" class="hidden py-12 text-center">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -118,7 +118,7 @@
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div class="text-sm text-gray-500">
-                Hiển thị <span id="showing-count">{{ $tenants->firstItem() }}-{{ $tenants->lastItem() }}</span> trên tổng <span id="total-count">{{ $tenants->total() }}</span>
+                Hiển thị <span id="showing-count">{{ $projects->firstItem() }}-{{ $projects->lastItem() }}</span> trên tổng <span id="total-count">{{ $projects->total() }}</span>
             </div>
             {{-- <div class="flex items-center gap-2">
                 <button disabled class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-400 bg-gray-50 cursor-not-allowed">Trước</button>
@@ -128,7 +128,7 @@
                 <button class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Sau</button>
             </div> --}}
 
-            {{ $tenants->links() }}
+            {{ $projects->links() }}
         </div>
     </div>
     </div>

@@ -37,7 +37,7 @@
 
     @vite([
         'resources/js/app.js',
-        'resources/sass/app.scss'
+        'resources/scss/app.scss'
     ])
 
     @vite('resources/js/bases/index.js'); 

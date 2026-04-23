@@ -1,12 +1,14 @@
-<?php 
-    echo json_encode($tenant);
+<?php
+if (isset($project)) {
+    echo json_encode($project);
     // die(); 
+}
 ?>
 
 @extends('admin.layouts.app');
 
 @push('script')
-@vite('resources/js/pages/tenant.js')
+@vite('resources/js/pages/project.js')
 @endpush
 
 
@@ -21,36 +23,32 @@
                 </svg>
             </button>
             <div>
-                <h3 class="text-2xl font-bold text-gray-900">Add New Tenant</h3>
-                <p class="text-gray-500 mt-1">Tạo tenant mới cho hệ thống</p>
+                <h3 class="text-2xl font-bold text-gray-900">Add New Project</h3>
+                <p class="text-gray-500 mt-1">Tạo dự án mới cho hệ thống</p>
             </div>
         </div>
 
-        <form id="create-form" method="POST" action="{{ isset($tenant) ? route('tenant.update', $tenant->slug) : route('tenant.store') }}" class="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <form id="create-form" method="POST" action="{{ isset($project) ? route('project.update', $project->slug) : route('tenant.store') }}" class="space-y-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             @csrf
-            @if(isset($tenant))
-                @method('PUT')
+            @if(isset($project))
+            @method('PUT')
             @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" autocomplete="FALSE" required placeholder="Cty A" value="{{ isset($tenant) ? $tenant->name : "" }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <input type="text" name="name" autocomplete="FALSE" required placeholder="Project A" value="{{ isset($project) ? $project->name : "" }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Slug <span class="text-red-500">*</span></label>
-                    <input type="text" name="slug" required placeholder="cty-a" value="{{ isset($tenant) ? $tenant->slug : '' }}" class="opacity-50 cursor-not-allowed pointer-events-none w-full px-3 py-2 border border-gray-300 rounded-lg text-disable focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                </div>
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Vai trò <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700">Status <span class="text-red-500">*</span></label>
                     <select name="is_active" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="1" {{ isset($tenant) && $tenant->is_active ? 'selected' : '' }}>Active</option>
-                        <option value="0" {{ isset($tenant) && !$tenant->is_active ? 'selected' : '' }}>No Active</option>
+                        <option value="1" {{ isset($project) && $project->is_active ? 'selected' : '' }}>Active</option>
+                        <option value="0" {{ isset($project) && !$project->is_active ? 'selected' : '' }}>No Active</option>
                     </select>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Trial End at <span class="text-red-500">*</span></label>
-                    <input type="date" name="trial_ends_at" required value="{{ isset($tenant) ? date('Y-m-d', strtotime($tenant->trial_ends_at)) : '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="trial_ends_at" required value="{{ isset($project) ? date('Y-m-d', strtotime($project->trial_ends_at)) : '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"></textarea>
                 </div>
             </div>
 
@@ -59,9 +57,9 @@
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                         <path d="M15 12v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3M10 2h6v6M8 10l8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
-                    {{ isset($tenant) ? 'Cập nhật' : 'Lưu' }}
+                    {{ isset($project) ? 'Cập nhật' : 'Lưu' }}
                 </button>
-                <a type="button" href="{{ route('tenant.index') }}" class="inline-flex items-center justify-center px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                <a type="button" href="{{ route('project.index') }}" class="inline-flex items-center justify-center px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                     Hủy
                 </a>
             </div>
@@ -69,4 +67,4 @@
     </div>
 
 </main>
-@endsection 
+@endsection

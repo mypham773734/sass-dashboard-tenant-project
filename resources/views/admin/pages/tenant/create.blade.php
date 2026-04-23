@@ -1,6 +1,6 @@
 <?php 
     if(isset($tenant)){
-        echo json_encode($tenant);
+        // echo json_encode($tenant);
     }
     // die(); 
 ?>

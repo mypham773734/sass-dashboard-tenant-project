@@ -18,6 +18,8 @@ class TenantController extends Controller
 
     public function index(){
         $tenants = Tenant::paginate(10); 
+
+        $data = $tenants; 
         return view('admin.pages.tenant.index', compact('tenants'));
     }
 
@@ -30,7 +32,7 @@ class TenantController extends Controller
 
             $tenant->users()->attach($user->id, ['role' => 'admin']); 
 
-            return redirect()->back()->with('success', 'Tạo tenant thành công');
+            return redirect()->route('tenant.index')->with('success', 'Tạo tenant thành công');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Lỗi tạo tenant: ' . $e->getMessage())

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\ProjectController; 
+
 
 
 
@@ -24,7 +26,7 @@ Route::middleware('auth')->group(function () {
         })->name('dashboard');
 
         Route::resource('/tenant', TenantController::class);
-        Route::resource('/project', TenantController::class);
+        Route::resource('/project', ProjectController::class);
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');
