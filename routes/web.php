@@ -8,10 +8,8 @@ use App\Http\Controllers\ProjectController;
 
 
 
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// English route
+require __DIR__.'/english.php';
 
 
 Route::middleware('guest')->group(function () {
