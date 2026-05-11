@@ -2,9 +2,11 @@
 
 namespace App\Services\Contracts; 
 
+use App\DTOs\projects\CreateProjectDTO; 
+
 interface ProjectServiceInterface{
     public function getProject($limit = 10); 
-    public function createProject(); 
+    public function createProject(CreateProjectDTO $dto); 
 
     public function updateProject(); 
 
