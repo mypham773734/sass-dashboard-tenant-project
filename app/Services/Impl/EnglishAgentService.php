@@ -8,8 +8,10 @@ use App\DTOs\englishs\PromptGenerateMessageDTO;
 
 class EnglishAgentService implements EnglishEgentServiceInterface{
     public function generateMessage(EnglishEgent $englishEgent, PromptGenerateMessageDTO $promptGenerateMessageDTO){
-        $prompt = $promptGenerateMessageDTO->toArray()['prompt']; 
-        return $englishEgent->prompt($prompt); 
+        // $prompt = $promptGenerateMessageDTO->toArray()['prompt']; 
+        // return $englishEgent->prompt($prompt);
+        
+        return "Tôi thường đi bộ trong công viên vào mỗi buổi sáng."; 
     }
 
 }

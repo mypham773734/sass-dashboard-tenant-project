@@ -14,6 +14,7 @@ new class extends Component
     {
         $this->tenantId = session('current_tenant_id');
         $this->tenants = Tenant::all();
+
     }
 
     public function switchTenant($tenantId)
