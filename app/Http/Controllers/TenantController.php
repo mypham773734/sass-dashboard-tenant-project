@@ -2,88 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Contracts\TenantServiceInterface; 
-use App\Http\Requests\StoreTenantRequest; 
-use App\DTOs\Tenants\CreateTenantDTO;
-use App\Models\Tenant;
+use App\Application\Tenant\DTOs\CreateTenantDTO;
+use App\Application\Tenant\DTOs\UpdateTenantDTO;
+use App\Application\Tenant\UseCases\CreateTenantUseCase;
+use App\Application\Tenant\UseCases\DeleteTenantUseCase;
+use App\Application\Tenant\UseCases\GetTenantsUseCase;
+use App\Application\Tenant\UseCases\UpdateTenantUseCase;
+use App\Http\Requests\StoreTenantRequest;
+use App\Http\Requests\UpdateTenantRequest;
 
 class TenantController extends Controller
 {
-    protected $tenantService; 
+    public function __construct(
+        private readonly GetTenantsUseCase  $getTenantsUseCase,
+        private readonly CreateTenantUseCase $createTenantUseCase,
+        private readonly UpdateTenantUseCase $updateTenantUseCase,
+        private readonly DeleteTenantUseCase $deleteTenantUseCase,
+    ) {}
 
-    public function __construct(TenantServiceInterface $tenantService)
+    public function index()
     {
-        $this->tenantService = $tenantService; 
-    }
+        $tenants = $this->getTenantsUseCase->execute(auth()->id());
 
-    public function index(){
-        $tenants = $this->tenantService->getTenants(10); 
         return view('admin.pages.tenant.index', compact('tenants'));
     }
 
-    public function store(StoreTenantRequest $request){
-        try {
-            $dto = CreateTenantDTO::fromArray($request->all());
-            $tenant = $this->tenantService->createTenant($dto);
-
-            $user = $request->user(); 
-
-            $tenant->users()->attach($user->id, ['role' => 'admin']); 
-
-            return redirect()->route('tenant.index')->with('success', 'Tạo tenant thành công');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Lỗi tạo tenant: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function show(){
-        
-    }
-
-    public function update(string $tenantSlug){
-        try {
-            $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
-
-            $dto = CreateTenantDTO::fromArray(request()->all());
-            $tenant = $this->tenantService->updateTenant($tenant, $dto);
-
-            return view('admin.pages.tenant.create', compact('tenant'));
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Lỗi cập nhật tenant: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function destroy(string $tenantSlug){
-        try {
-            $userId = Auth()->id;
-            $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
-
-            $selectedCurrentTenantId = session('current_tenant_id'); 
-            if($selectedCurrentTenantId === $tenant->id){
-                return redirect()->back()
-                    ->with('error', 'Bạn không thể xóa tenant đang chọn làm tenant hiện tại');
-            }           
-
-            $result = $this->tenantService->deleteTenant($tenant, $userId);
-
-            return redirect()->back()->with('success', 'Xóa tenant thành công');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Lỗi xóa tenant: ' . $e->getMessage());
-        }
-    }
-
-    public function create(){
+    public function create()
+    {
         return view('admin.pages.tenant.create');
     }
 
-    public function edit(string $tenantSlug){
-        $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail(); 
+    public function store(StoreTenantRequest $request)
+    {
+        try {
+            $dto    = CreateTenantDTO::fromArray($request->validated());
+            $tenant = $this->createTenantUseCase->execute($dto, auth()->id());
 
-        return view('admin.pages.tenant.create', compact('tenant'));
+            return redirect()
+                ->route('tenant.index')
+                ->with('success', 'Tenant created successfully.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+    public function edit(string $tenantSlug)
+    {
+        $tenant = $this->getTenantsUseCase
+            ->execute(auth()->id());
+
+        // Find the specific tenant from the already-scoped list.
+        $tenantEntity = collect($tenant)
+            ->first(fn ($t) => $t->slug === $tenantSlug);
+
+        if (! $tenantEntity) {
+            abort(404);
+        }
+
+        return view('admin.pages.tenant.create', ['tenant' => $tenantEntity]);
+    }
+
+    public function update(UpdateTenantRequest $request, string $tenantSlug)
+    {
+        try {
+            $dto    = UpdateTenantDTO::fromArray($request->validated());
+            $tenant = $this->updateTenantUseCase->execute($tenantSlug, $dto);
+
+            return redirect()
+                ->route('tenant.index')
+                ->with('success', 'Tenant updated successfully.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+    public function destroy(string $tenantSlug)
+    {
+        try {
+            $this->deleteTenantUseCase->execute(
+                slug:            $tenantSlug,
+                userId:          auth()->id(),
+                currentTenantId: session('current_tenant_id'),
+            );
+
+            return redirect()
+                ->route('tenant.index')
+                ->with('success', 'Tenant deleted successfully.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 }

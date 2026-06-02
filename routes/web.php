@@ -9,7 +9,7 @@ use App\Http\Controllers\ProjectController;
 
 
 // English route
-require __DIR__.'/english.php';
+// require __DIR__.'/english.php';
 
 
 Route::middleware('guest')->group(function () {

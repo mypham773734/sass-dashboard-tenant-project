@@ -19,19 +19,26 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── Clean Architecture bindings (new) ─────────────────────────────────
         $this->app->bind(
-            \App\Services\Contracts\TenantServiceInterface::class, 
-            \App\Services\Impl\TenantService::class
-        ); 
+            \App\Domain\Tenant\Repositories\TenantRepositoryInterface::class,
+            \App\Infrastructure\Persistence\Repositories\EloquentTenantRepository::class,
+        );
+
+        // ── Legacy Service bindings (kept while parallel refactor is in progress) ──
+        $this->app->bind(
+            \App\Services\Contracts\TenantServiceInterface::class,
+            \App\Services\Impl\TenantService::class,
+        );
 
         $this->app->bind(
-            \App\Services\Contracts\ProjectServiceInterface::class, 
-            \App\Services\Impl\ProjectService::class
-        ); 
+            \App\Services\Contracts\ProjectServiceInterface::class,
+            \App\Services\Impl\ProjectService::class,
+        );
 
         $this->app->bind(
-            \App\Services\Contracts\EnglishEgentServiceInterface::class, 
-            \App\Services\Impl\EnglishAgentService::class
-        ); 
+            \App\Services\Contracts\EnglishEgentServiceInterface::class,
+            \App\Services\Impl\EnglishAgentService::class,
+        );
     }
 }

@@ -8,48 +8,48 @@
 [![Livewire 4](https://img.shields.io/badge/Livewire-4.x-FB70A9?style=flat-square&logo=livewire)](https://livewire.laravel.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-*Nền tảng SaaS hiện đại với kiến trúc multi-tenant Single Database, hỗ trợ quản lý dự án và người dùng.*
+*A modern SaaS platform with a Single Database multi-tenant architecture, supporting project and user management.*
 
-[📖 Documentation](#-tài-liệu) • [🚀 Quick Start](#-cài-đặt-nhanh) • [🏗️ Architecture](#-kiến-trúc) • [📂 API Routes](#-api-documentation) • [🛠️ Troubleshooting](#-troubleshooting)
+[📖 Documentation](#-documentation) • [🚀 Quick Start](#-quick-start) • [🏗️ Architecture](#-architecture) • [📂 API Routes](#-api-documentation) • [🛠️ Troubleshooting](#-troubleshooting)
 
 </div>
 
 ---
 
-## 📋 Mục lục
+## 📋 Table of Contents
 
-- [🎯 Tổng Quan](#-tổng-quan)
-- [✨ Tính Năng Chính](#-tính-năng-chính)
-- [🏗️ Kiến Trúc](#-kiến-trúc)
-- [📊 Sơ Đồ Luồng Tenant](#-sơ-đồ-luồng-xử-lý-tenant)
-- [🚀 Cài Đặt Từ A-Z](#-cài-đặt-từ-a-z)
+- [🎯 Overview](#-overview)
+- [✨ Key Features](#-key-features)
+- [🏗️ Architecture](#-architecture)
+- [📊 Tenant Flow Diagram](#-tenant-request-flow)
+- [🚀 Installation](#-installation)
 - [📂 API Documentation](#-api-documentation)
-- [⚙️ Các Lệnh Artisan](#-các-lệnh-artisan-số-học)
+- [⚙️ Artisan Commands](#-artisan-commands)
 - [🛠️ Troubleshooting](#-troubleshooting)
-- [📚 Tài Liệu Bổ Sung](#-tài-liệu-bổ-sung)
+- [📚 Additional Documentation](#-additional-documentation)
 
 ---
 
-## 🎯 Tổng Quan
+## 🎯 Overview
 
-**Dashboard SASS** là một nền tảng SaaS (Software as a Service) được xây dựng trên Laravel 13 với kiến trúc **Multi-Tenant Single Database**. Ứng dụng cho phép:
+**Dashboard SASS** is a SaaS (Software as a Service) platform built on Laravel 13 with a **Multi-Tenant Single Database** architecture. The application supports:
 
-✅ Tạo và quản lý nhiều **Tenant** (Công ty/Tổ chức)  
-✅ Phân cấp quyền người dùng trong mỗi tenant (Role-based)  
-✅ Cô lập dữ liệu một cách an toàn giữa các tenant  
-✅ Quản lý dự án (**Projects**) theo tenant  
-✅ Giao diện realtime với **Livewire** và **Alpine.js**  
-✅ Styling hiện đại với **Tailwind CSS** và **SASS**
+✅ Creating and managing multiple **Tenants** (Companies/Organisations)  
+✅ Role-based access control per tenant  
+✅ Secure data isolation between tenants  
+✅ **Project** management scoped to each tenant  
+✅ Realtime UI with **Livewire** and **Alpine.js**  
+✅ Modern styling with **Tailwind CSS** and **SASS**
 
-### Kiến Trúc Multi-Tenant: Single Database
+### Multi-Tenant Architecture: Single Database
 
-Thay vì tạo một database riêng cho mỗi tenant (Multi-DB), chúng tôi sử dụng **Single Database** với cột `tenant_id` trong các bảng:
+Instead of creating a separate database for each tenant (Multi-DB), we use a **Single Database** with a `tenant_id` column across relevant tables:
 
 ```sql
--- Ví dụ: Bảng Projects
+-- Example: Projects table
 CREATE TABLE projects (
     id BIGINT PRIMARY KEY,
-    tenant_id BIGINT NOT NULL,         -- ← Khóa phân biệt tenant
+    tenant_id BIGINT NOT NULL,         -- ← Tenant discriminator key
     owner_id BIGINT NOT NULL,
     name VARCHAR(255),
     description TEXT,
@@ -60,73 +60,73 @@ CREATE TABLE projects (
 );
 ```
 
-**Lợi ích:**
-- 💰 Tiết kiệm chi phí server (không cần database riêng)
-- 🚀 Dễ dàng backup/restore toàn bộ dữ liệu
-- 🔄 Scalability dễ dàng hơn
-- 🔐 Global Scope tự động lọc dữ liệu theo user
+**Benefits:**
+- 💰 Lower server costs (no per-tenant database)
+- 🚀 Simple full-data backup and restore
+- 🔄 Easier scalability
+- 🔐 Global Scope automatically filters data per user
 
 ---
 
-## ✨ Tính Năng Chính
+## ✨ Key Features
 
 ### 🟢 Tenant Management
-- ✅ Tạo tenant mới (`POST /admin/tenant`)
-- ✅ Liệt kê tenant (`GET /admin/tenant`)
-- ✅ Cập nhật tenant (trong `TenantController::update`)
-- ✅ Xóa tenant mềm (Soft Delete)
-- ✅ Cơ chế Trial Period (trial_ends_at)
-- ✅ Settings JSON cho mỗi tenant
+- ✅ Create a new tenant (`POST /admin/tenant`)
+- ✅ List tenants (`GET /admin/tenant`)
+- ✅ Update a tenant (`TenantController::update`)
+- ✅ Soft-delete a tenant
+- ✅ Trial Period mechanism (`trial_ends_at`)
+- ✅ Per-tenant JSON settings
 
 ### 👥 User & Role Management
-- ✅ Tạo người dùng và phân công cho tenant
+- ✅ Create users and assign them to tenants
 - ✅ Role-based access (admin, member, viewer)
-- ✅ Gán role qua pivot table `tenant_user` với cột `role`
-- ✅ Hỗ trợ Spatie Laravel Permission
+- ✅ Roles stored in the `tenant_user` pivot table via the `role` column
+- ✅ Spatie Laravel Permission integration
 
 ### 📁 Project Management
-- ✅ Tạo project thuộc tenant
-- ✅ Ghi owner_id (người tạo)
-- ✅ Trạng thái project (active, archived, etc.)
-- ✅ Mô tả & metadata project
-- ✅ Soft delete projects
+- ✅ Create projects scoped to a tenant
+- ✅ Track `owner_id` (creator)
+- ✅ Project status (active, archived, etc.)
+- ✅ Project description & metadata
+- ✅ Soft-delete projects
 
 ### 🔐 Multi-Tenancy Features
-- ✅ **Global Scope**: Tự động lọc query theo user
-- ✅ **Tenant Isolation**: Dữ liệu được cô lập an toàn
-- ✅ **Automatic Filtering**: Eloquent query tự động chỉ lấy data của tenant hiện tại
-- ✅ **Permission Integration**: Kết hợp Spatie Permission
+- ✅ **Global Scope**: Automatically filters queries by the current user
+- ✅ **Tenant Isolation**: Data is securely isolated between tenants
+- ✅ **Automatic Filtering**: Eloquent queries only return data for the current tenant
+- ✅ **Permission Integration**: Works with Spatie Permission
 
 ### 🎨 Frontend
-- ✅ Giao diện Admin Dashboard
+- ✅ Admin Dashboard UI
 - ✅ Blade Templates + Livewire Components
 - ✅ Tailwind CSS + SASS
 - ✅ Alpine.js for interactivity
 - ✅ Custom Auth UI
 
 ### 🔧 Backend Architecture
-- ✅ **Service Layer Pattern**: `TenantService` implement interface
+- ✅ **Service Layer Pattern**: `TenantService` implements an interface
 - ✅ **Repository Pattern**: Contracts + Implementations
 - ✅ **DTO Pattern**: `CreateTenantDTO` for data transfer
-- ✅ **Dependency Injection**: Binding tại `AppServiceProvider`
+- ✅ **Dependency Injection**: Bindings registered in `AppServiceProvider`
 - ✅ **Custom Request Validation**: `StoreTenantRequest`
 
 ---
 
-## 🏗️ Kiến Trúc
+## 🏗️ Architecture
 
-### Cấu Trúc Thư Mục
+### Directory Structure
 
 ```
 dashboard-sass/
 ├── app/
 │   ├── DTOs/                          # Data Transfer Objects
 │   │   └── tenants/
-│   │       └── CreateTenantDTO.php    # DTO cho tạo tenant
+│   │       └── CreateTenantDTO.php    # DTO for tenant creation
 │   │
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── TenantController.php   # Quản lý tenant
+│   │   │   ├── TenantController.php   # Tenant management
 │   │   │   ├── ProfileController.php
 │   │   │   └── CustomAuth/
 │   │   │       └── AuthenticatedSessionController.php
@@ -134,9 +134,9 @@ dashboard-sass/
 │   │       └── StoreTenantRequest.php # Validation request
 │   │
 │   ├── Models/
-│   │   ├── Tenant.php                 # Model Tenant (main)
-│   │   ├── User.php                   # Model User
-│   │   ├── Project.php                # Model Project
+│   │   ├── Tenant.php                 # Tenant model (main)
+│   │   ├── User.php                   # User model
+│   │   ├── Project.php                # Project model
 │   │   └── Scopes/
 │   │       └── TenantScope.php        # Global scope for tenant isolation
 │   │
@@ -153,7 +153,7 @@ dashboard-sass/
 │   ├── Providers/
 │   │   └── AppServiceProvider.php     # Service container bindings
 │   │
-│   ├── Traits/                         # Reusable traits
+│   ├── Traits/                        # Reusable traits
 │   └── View/
 │       └── Components/                # View components
 │
@@ -242,8 +242,8 @@ CREATE TABLE tenant_user (
 -- Projects Table
 CREATE TABLE projects (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    tenant_id BIGINT NOT NULL,       -- ← Khóa phân biệt tenant
-    owner_id BIGINT NOT NULL,        -- ← Người tạo
+    tenant_id BIGINT NOT NULL,        -- ← Tenant discriminator key
+    owner_id BIGINT NOT NULL,         -- ← Creator
     name VARCHAR(255) NOT NULL,
     description TEXT NULL,
     status VARCHAR(50) DEFAULT 'active',
@@ -260,11 +260,11 @@ CREATE TABLE projects (
 
 ---
 
-## 📊 Sơ Đồ Luồng Xử Lý Tenant
+## 📊 Tenant Request Flow
 
 ```mermaid
 graph TD
-    A["🌐 User Request<br/>GET /admin/tenant"] --> B["🔐 Middleware: auth<br/>Xác thực user"]
+    A["🌐 User Request<br/>GET /admin/tenant"] --> B["🔐 Middleware: auth<br/>Authenticate user"]
     B --> C{["Authenticated?"]}
     C -->|No| D["❌ Redirect to login"]
     C -->|Yes| E["📝 TenantController::index<br/>Tenant::all"]
@@ -290,11 +290,11 @@ graph TD
     style O fill:#c8e6c9
 ```
 
-### Luồng Chi Tiết:
+### Flow Details
 
 #### 1️⃣ **Request Phase**
 ```php
-// User yêu cầu: GET /admin/tenant
+// User requests: GET /admin/tenant
 Route::middleware('auth')->group(function () {
     Route::resource('/tenant', TenantController::class);
 });
@@ -304,7 +304,7 @@ Route::middleware('auth')->group(function () {
 ```php
 public function index()
 {
-    $tenants = Tenant::all();  // 🔑 Áp dụng TenantScope
+    $tenants = Tenant::all();  // 🔑 TenantScope applied automatically
     return view('admin.pages.tenant.index', [
         'tenants' => $tenants
     ]);
@@ -323,7 +323,7 @@ public static function booted()
 public function apply(Builder $builder, Model $model): void
 {
     if(auth()->check()) {
-        // Chỉ lấy tenant mà user hiện tại thuộc về
+        // Only return tenants the current user belongs to
         $builder->whereHas('users', function ($q) {
             $q->where('users.id', auth()->id());
         });
@@ -344,49 +344,49 @@ WHERE EXISTS (
 
 #### 5️⃣ **Response Phase**
 ```php
-// View nhận mảng tenants đã lọc
-// Chỉ hiển thị tenant của user hiện tại
+// View receives the filtered tenants array
+// Only the current user's tenants are displayed
 ```
 
 ---
 
-## 🚀 Cài Đặt Từ A-Z
+## 🚀 Installation
 
-### 📋 Yêu Cầu Hệ Thống
+### 📋 System Requirements
 
-- **PHP**: 8.3 trở lên
-- **Composer**: Phiên bản mới nhất
-- **Node.js**: 16+ (cho Vite & npm)
-- **Database**: SQLite (mặc định) hoặc MySQL 8.0+ / PostgreSQL 12+
-- **Git**: Để clone repository
+- **PHP**: 8.3 or higher
+- **Composer**: Latest version
+- **Node.js**: 16+ (for Vite & npm)
+- **Database**: SQLite (default) or MySQL 8.0+ / PostgreSQL 12+
+- **Git**: To clone the repository
 
-### ⚡ Quick Start (5 phút)
+### ⚡ Quick Start (5 minutes)
 
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone https://github.com/yourusername/dashboard-sass.git
 cd dashboard-sass
 
-# 2. Chạy setup script tự động
+# 2. Run the automated setup script
 composer run setup
 
-# ✅ Setup hoàn thành! Ứng dụng sẵn sàng
+# ✅ Setup complete! The application is ready.
 ```
 
-### 📖 Chi Tiết Từng Bước
+### 📖 Step-by-Step Guide
 
-#### **Bước 1: Chuẩn Bị Môi Trường**
+#### **Step 1: Prepare the Environment**
 
 ```bash
-# 1.1 Clone repository
+# 1.1 Clone the repository
 git clone https://github.com/yourusername/dashboard-sass.git
 cd dashboard-sass
 
-# 1.2 Copy .env.example thành .env
+# 1.2 Copy .env.example to .env
 cp .env.example .env
 
-# 1.3 Hoặc edit .env cho cơ sở dữ liệu (tùy chọn)
-# SQLite (Mặc định):
+# 1.3 Edit .env for your database (optional)
+# SQLite (Default):
 DB_CONNECTION=sqlite
 
 # MySQL:
@@ -406,52 +406,52 @@ DB_USERNAME=postgres
 DB_PASSWORD=your_password
 ```
 
-#### **Bước 2: Cài Đặt Dependencies**
+#### **Step 2: Install Dependencies**
 
 ```bash
-# 2.1 Cài PHP dependencies
+# 2.1 Install PHP dependencies
 composer install
 
 # 2.2 Generate application key
 php artisan key:generate
 
-# 2.3 Cài Node.js dependencies
+# 2.3 Install Node.js dependencies
 npm install --ignore-scripts
 
-# Hoặc nếu dùng pnpm/yarn
+# Or if using pnpm/yarn
 pnpm install
-# hay
+# or
 yarn install
 ```
 
-#### **Bước 3: Cấu Hình Database**
+#### **Step 3: Configure the Database**
 
 ```bash
-# 3.1 Tạo database (nếu dùng MySQL/PostgreSQL)
+# 3.1 Create database (if using MySQL/PostgreSQL)
 # MySQL:
 mysql -u root -p -e "CREATE DATABASE dashboard_sass;"
 
 # PostgreSQL:
 createdb dashboard_sass
 
-# 3.2 Chạy migrations
+# 3.2 Run migrations
 php artisan migrate
 
-# 3.3 (Tùy chọn) Chạy seeders
+# 3.3 (Optional) Run seeders
 php artisan db:seed
 ```
 
-#### **Bước 4: Xây Dựng Frontend Assets**
+#### **Step 4: Build Frontend Assets**
 
 ```bash
-# 4.1 Dev mode (watch cho changes)
+# 4.1 Dev mode (watch for changes)
 npm run dev
 
-# Hoặc build production
+# Or build for production
 npm run build
 ```
 
-#### **Bước 5: Chạy Ứng Dụng**
+#### **Step 5: Run the Application**
 
 ```bash
 # Option 1: PHP built-in server
@@ -459,7 +459,7 @@ php artisan serve
 
 # Output: Starting Laravel development server: http://127.0.0.1:8000
 
-# Option 2: Chạy đầy đủ (server + queue + logs + frontend dev)
+# Option 2: Full stack (server + queue + logs + frontend dev)
 composer run dev
 
 # Output:
@@ -469,44 +469,44 @@ composer run dev
 # ✓ vite    | Vite starting...
 ```
 
-#### **Bước 6: Truy Cập Ứng Dụng**
+#### **Step 6: Access the Application**
 
 ```
-🌐 Mở browser và truy cập:
+🌐 Open your browser and go to:
    http://localhost:8000
 
-📝 Đăng ký tài khoản hoặc đăng nhập
-💼 Tạo tenant đầu tiên từ /admin/tenant
-✅ Bắt đầu quản lý project!
+📝 Register an account or log in
+💼 Create your first tenant at /admin/tenant
+✅ Start managing projects!
 ```
 
-### 🐳 Cài Đặt Với Docker (Tùy Chọn)
+### 🐳 Docker Installation (Optional)
 
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone https://github.com/yourusername/dashboard-sass.git
 cd dashboard-sass
 
-# 2. Sao chép .env
+# 2. Copy .env
 cp .env.example .env
 
-# 3. Xây dựng Docker image
+# 3. Build Docker image
 docker-compose build
 
-# 4. Khởi động containers
+# 4. Start containers
 docker-compose up -d
 
-# 5. Chạy commands trong container
+# 5. Run commands inside the container
 docker-compose exec app composer install
 docker-compose exec app php artisan migrate
 docker-compose exec app npm install
 docker-compose exec app npm run build
 
-# 6. Truy cập ứng dụng
+# 6. Access the application
 # http://localhost:80
 ```
 
-#### `docker-compose.yml` (Tạo file này)
+#### `docker-compose.yml` (create this file)
 
 ```yaml
 version: '3.8'
@@ -603,7 +603,7 @@ Response: 302 Redirect to /
 
 ### 🏢 Tenant Management Routes
 
-#### 📋 Liệt Kê Tenants
+#### 📋 List Tenants
 ```http
 GET /admin/tenant
 Authorization: Authenticated
@@ -636,7 +636,7 @@ WHERE EXISTS (
 
 ---
 
-#### ✨ Form Tạo Tenant
+#### ✨ Create Tenant Form
 ```http
 GET /admin/tenant/create
 Authorization: Authenticated
@@ -649,7 +649,7 @@ HTML: admin.pages.tenant.create form
 
 ---
 
-#### ➕ Tạo Tenant Mới
+#### ➕ Create New Tenant
 ```http
 POST /admin/tenant
 Authorization: Authenticated
@@ -755,7 +755,7 @@ Status: In Development (soft delete)
 {
   "user_id": 1,
   "tenant_id": 1,
-  "role": "admin",  // ← Có thể là: admin, member, viewer
+  "role": "admin",  // Possible values: admin, member, viewer
   "created_at": "2026-04-09T10:39:02Z",
   "updated_at": "2026-04-09T10:39:02Z"
 }
@@ -780,7 +780,7 @@ Status: In Development (soft delete)
 
 ### 🔐 Security Headers & CSRF
 
-Tất cả POST/PATCH/DELETE requests cần CSRF token:
+All POST/PATCH/DELETE requests require a CSRF token:
 
 ```html
 <!-- Blade Template -->
@@ -791,7 +791,7 @@ Tất cả POST/PATCH/DELETE requests cần CSRF token:
 </form>
 ```
 
-```php
+```javascript
 // In AJAX Request
 const token = document.querySelector('meta[name="csrf-token"]').content;
 fetch('/admin/tenant', {
@@ -806,22 +806,22 @@ fetch('/admin/tenant', {
 
 ---
 
-## ⚙️ Các Lệnh Artisan Số Học
+## ⚙️ Artisan Commands
 
 ### 🚀 Development
 
 ```bash
-# Chạy development server (PHP built-in)
+# Start the development server (PHP built-in)
 php artisan serve
 # Output: http://127.0.0.1:8000
 
-# Chạy tất cả (server + queue + logs + frontend dev)
+# Run everything (server + queue + logs + frontend dev)
 composer run dev
 
-# Chạy Tinker (Interactive Shell)
+# Open Tinker (interactive shell)
 php artisan tinker
 
-# Clear all cache
+# Clear all caches
 php artisan cache:clear
 php artisan config:clear
 php artisan route:clear
@@ -831,42 +831,42 @@ php artisan view:clear
 ### 📊 Database
 
 ```bash
-# Chạy tất cả migrations
+# Run all migrations
 php artisan migrate
 
-# Rollback migration cuối cùng
+# Rollback the last migration
 php artisan migrate:rollback
 
-# Rollback tất cả migrations
+# Rollback all migrations
 php artisan migrate:reset
 
-# Refresh databases (reset + migrate)
+# Refresh the database (reset + migrate)
 php artisan migrate:refresh
 
-# Seed database
+# Seed the database
 php artisan db:seed
 
 # Refresh + Seed
 php artisan migrate:refresh --seed
 
-# Kiểm tra migration status
+# Check migration status
 php artisan migrate:status
 ```
 
 ### 🛠️ Tenant Management
 
 ```bash
-# Lệnh tùy chỉnh (nếu tạo command)
+# Custom command (if created)
 php artisan tenant:create --name="New Company" --slug="new-company"
 
-# Liệt kê all tenants
+# List all tenants
 php artisan tinker
 >>> Tenant::all();
 
-# Lấy tenant cụ thể
+# Get a specific tenant
 >>> Tenant::where('slug', 'acme-corp')->first();
 
-# Thêm user vào tenant
+# Add a user to a tenant
 >>> $tenant = Tenant::find(1);
 >>> $tenant->users()->attach(2, ['role' => 'admin']);
 ```
@@ -877,26 +877,26 @@ php artisan tinker
 # Test mail configuration
 php artisan mail:show
 
-# Kiểm tra mail queue
+# Check the mail queue
 php artisan queue:listen --tries=1 --timeout=0
 ```
 
 ### 🧪 Testing
 
 ```bash
-# Chạy tất cả tests
+# Run all tests
 php artisan test
 
-# Chạy tests với coverage
+# Run tests with coverage
 php artisan test --coverage
 
-# Chạy test file cụ thể
+# Run a specific test file
 php artisan test tests/Feature/Auth/LoginTest.php
 
-# Chạy unit tests chỉ
+# Run unit tests only
 php artisan test tests/Unit/
 
-# Chạy feature tests chỉ
+# Run feature tests only
 php artisan test tests/Feature/
 ```
 
@@ -906,26 +906,26 @@ php artisan test tests/Feature/
 # Lint PHP code
 ./vendor/bin/pint
 
-# Lint + Fix automatically
+# Lint and fix automatically
 ./vendor/bin/pint --fix
 
-# Check code with PHPStan (nếu cài)
+# Check code with PHPStan (if installed)
 php artisan ide-helper:generate
 
-# Xem routes
+# List routes
 php artisan route:list
 
-# Xem models
+# Show model info
 php artisan model:show
 ```
 
 ### 🔍 Debugging
 
 ```bash
-# Monitor logs real-time
+# Monitor logs in real time
 php artisan pail
 
-# Xem SQL queries
+# Log SQL queries
 php artisan tinker
 >>> DB::listen(function ($query) { dump($query->sql); });
 
@@ -940,14 +940,14 @@ php artisan model:list
 ### 🗑️ Cleanup
 
 ```bash
-# Xóa old logs
+# Clear old logs
 php artisan logs:clear
 
-# Xóa failed jobs
+# Clear failed jobs
 php artisan queue:failed-table
 php artisan queue:flush
 
-# Reset queue
+# Restart the queue worker
 php artisan queue:restart
 ```
 
@@ -955,25 +955,25 @@ php artisan queue:restart
 
 ## 🛠️ Troubleshooting
 
-### 🔴 Lỗi Tenant Isolation
+### 🔴 Tenant Isolation Issues
 
-#### ❌ Lỗi: User thấy data của tenant khác
+#### ❌ Error: User sees data from another tenant
 
-**Nguyên nhân:**
-- Global Scope chưa được áp dụng
-- TenantScope::apply() không được gọi
-- User chưa được authenticate
+**Cause:**
+- Global Scope not applied
+- `TenantScope::apply()` not being called
+- User is not authenticated
 
-**Giải pháp:**
+**Fix:**
 
 ```php
 // In Model:
 public static function booted()
 {
-    static::addGlobalScope(new TenantScope);  // ✅ Đảm bảo có
+    static::addGlobalScope(new TenantScope);  // ✅ Make sure this exists
 }
 
-// Kiểm tra TenantScope:
+// Verify TenantScope:
 class TenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
@@ -988,20 +988,20 @@ class TenantScope implements Scope
 
 // Debug:
 php artisan tinker
->>> auth()->user();  // Kiểm tra nếu user được authenticate
->>> Tenant::all();   // Kiểm tra nếu scope được áp dụng
+>>> auth()->user();  // Check if the user is authenticated
+>>> Tenant::all();   // Check if the scope is applied
 ```
 
-#### ❌ Lỗi: Certain models không lọc theo tenant
+#### ❌ Error: Certain models are not filtered by tenant
 
-**Nguyên nhân:**
-- Model không có TenantScope global scope
-- Model không có quan hệ belongsTo(Tenant::class)
+**Cause:**
+- Model does not have the `TenantScope` global scope
+- Model does not have a `belongsTo(Tenant::class)` relationship
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ❌ Sai (không có scope)
+// ❌ Wrong (no scope)
 class Project extends Model
 {
     public function tenant() {
@@ -1009,7 +1009,7 @@ class Project extends Model
     }
 }
 
-// ✅ Đúng (có scope)
+// ✅ Correct (with scope)
 class Project extends Model
 {
     protected static function booted()
@@ -1025,19 +1025,19 @@ class Project extends Model
 
 ---
 
-### 🔴 Lỗi Migration
+### 🔴 Migration Errors
 
-#### ❌ Lỗi: "SQLSTATE[HY000]: General error: 1 Error while executing query"
+#### ❌ Error: "SQLSTATE[HY000]: General error: 1 Error while executing query"
 
-**Nguyên nhân:**
-- SQLite không hỗ trợ foreign key theo mặc định
-- Hoặc bảng chưa tồn tại
+**Cause:**
+- SQLite does not enforce foreign keys by default
+- Or the referenced table does not exist yet
 
-**Giải pháp:**
+**Fix:**
 
 ```php
 // In migration file:
-Schema::enableForeignKeyConstraints();  // ← Enable trước khi migrate
+Schema::enableForeignKeyConstraints();  // ← Enable before migrating
 
 Schema::create('projects', function (Blueprint $table) {
     // ... columns ...
@@ -1045,98 +1045,97 @@ Schema::create('projects', function (Blueprint $table) {
 
 Schema::disableForeignKeyConstraints();
 
-// Hoặc trong config/database.php:
+// Or in config/database.php:
 'sqlite' => [
     'driver' => 'sqlite',
     'database' => env('DB_DATABASE', database_path('database.sqlite')),
     'prefix' => '',
-    'foreign_key_constraints' => true,  // ← Thêm dòng này
+    'foreign_key_constraints' => true,  // ← Add this line
 ],
 ```
 
-#### ❌ Lỗi: "Table already exists"
+#### ❌ Error: "Table already exists"
 
-**Giải pháp:**
+**Fix:**
 
 ```bash
 # Reset database
 php artisan migrate:reset
 
-# Hoặc xóa database file (SQLite)
+# Or delete the database file (SQLite)
 rm database/database.sqlite
 php artisan migrate
 ```
 
 ---
 
-### 🔴 Lỗi Permission/Role
+### 🔴 Permission / Role Errors
 
-#### ❌ Lỗi: User không có role trong tenant
+#### ❌ Error: User has no role in a tenant
 
-**Nguyên nhân:**
-- User chưa được gán vào tenant_user table
-- Role không được set đúng
+**Cause:**
+- User has not been added to the `tenant_user` table
+- Role was not set correctly
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ✅ Gán user vào tenant khi tạo
+// ✅ Attach user to tenant on creation
 $tenant = Tenant::create($data);
 $tenant->users()->attach(auth()->id(), ['role' => 'admin']);
 
-// ✅ Kiểm tra user có trong tenant
+// ✅ Check if user belongs to a tenant
 $user = User::find(1);
-$user->tenants;  // Danh sách tenants của user
+$user->tenants;  // List of tenants for this user
 
-// ✅ Kiểm tra role
+// ✅ Check role
 $tenant = Tenant::find(1);
 $tenant->users()->where('user_id', auth()->id())->first();
-// Output: User object với pivot.role
+// Output: User object with pivot.role
 ```
 
 ---
 
-### 🔴 Lỗi Setting của Tenant
+### 🔴 Tenant Settings Errors
 
-#### ❌ Lỗi: Settings JSON không hoạt động
+#### ❌ Error: JSON settings not working
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ✅ Khai báo casts trong model
+// ✅ Declare cast in the model
 class Tenant extends Model
 {
     protected $casts = [
-        'settings' => 'array',  // ← Tự động convert JSON
+        'settings' => 'array',  // ← Automatically converts JSON
     ];
 }
 
-// ✅ Sử dụng settings
+// ✅ Use settings
 $tenant = Tenant::find(1);
 $tenant->settings['theme'] = 'dark';
 $tenant->save();
 
-// ✅ Query settings
+// ✅ Query by settings
 Tenant::where('settings->theme', 'dark')->get();
 ```
 
 ---
 
-### 🔴 Lỗi Trial Period
+### 🔴 Trial Period Errors
 
-#### ❌ Lỗi: Tenant subscription hết hạn
+#### ❌ Error: Tenant subscription has expired
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ✅ Kiểm tra trial status
+// ✅ Check trial status
 $tenant = Tenant::find(1);
 if ($tenant->trial_ends_at && $tenant->trial_ends_at < now()) {
-    // Tenant trial đã hết
     return response()->json(['message' => 'Trial expired'], 403);
 }
 
-// ✅ Trong scope
+// ✅ Inside the scope
 class TenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
@@ -1144,7 +1143,7 @@ class TenantScope implements Scope
         if(auth()->check()) {
             $builder->whereHas('users', function ($q) {
                 $q->where('users.id', auth()->id());
-            })->where('is_active', true);  // ← Chỉ active tenants
+            })->where('is_active', true);  // ← Active tenants only
             // ->where('trial_ends_at', '>', now());  // ← Optional
         }
     }
@@ -1153,27 +1152,27 @@ class TenantScope implements Scope
 
 ---
 
-### 🔴 Lỗi Performance / N+1 Queries
+### 🔴 Performance / N+1 Query Errors
 
-#### ❌ Lỗi: Queries quá nhiều khi load tenants
+#### ❌ Error: Too many queries when loading tenants
 
-**Nguyên nhân:**
-- Không dùng eager loading
-- Global Scope gây N+1 queries
+**Cause:**
+- Eager loading not used
+- Global Scope causing N+1 queries
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ❌ Sai (N+1 queries)
+// ❌ Wrong (N+1 queries)
 $tenants = Tenant::all();
 foreach ($tenants as $tenant) {
-    echo $tenant->users()->count();  // ← Query cho mỗi tenant
+    echo $tenant->users()->count();  // ← A query for every tenant
 }
 
-// ✅ Đúng (eager load)
+// ✅ Correct (eager load)
 $tenants = Tenant::with('users', 'projects')->get();
 foreach ($tenants as $tenant) {
-    echo count($tenant->users);  // ← Không query thêm
+    echo count($tenant->users);  // ← No extra queries
 }
 
 // ✅ Debug queries
@@ -1184,27 +1183,27 @@ DB::listen(function ($query) {
 
 ---
 
-### 🔴 Lỗi View/Blade
+### 🔴 View / Blade Errors
 
-#### ❌ Lỗi: View không found
+#### ❌ Error: View not found
 
-**Nguyên nhân:**
-- Path view sai
-- View file không tồn tại
+**Cause:**
+- Incorrect view path
+- View file does not exist
 
-**Giải pháp:**
+**Fix:**
 
 ```php
-// ✅ Kiểm tra path
+// ✅ Check the path
 // resources/views/admin/pages/tenant/index.blade.php
-// Tương ứng: admin.pages.tenant.index
+// Corresponds to: admin.pages.tenant.index
 
 // ✅ Debug
 php artisan view:clear
 php artisan config:clear
 php artisan cache:clear
 
-// ✅ Cách gọi:
+// ✅ Correct usage:
 return view('admin.pages.tenant.index', [
     'tenants' => $tenants
 ]);
@@ -1212,24 +1211,24 @@ return view('admin.pages.tenant.index', [
 
 ---
 
-### 🔴 Lỗi Assets (CSS/JS)
+### 🔴 Asset Errors (CSS/JS)
 
-#### ❌ Lỗi: CSS/JS không load
+#### ❌ Error: CSS/JS not loading
 
-**Nguyên nhân:**
-- Vite dev server chưa chạy
-- Build chưa được chạy
+**Cause:**
+- Vite dev server is not running
+- Assets have not been built
 
-**Giải pháp:**
+**Fix:**
 
 ```bash
 # Dev mode (watch)
 npm run dev
 
-# Hoặc build production
+# Or build for production
 npm run build
 
-# Kiểm tra manifest
+# Check manifest
 ls public/build/manifest.json
 
 # Clear cache
@@ -1238,9 +1237,9 @@ php artisan cache:clear
 
 ---
 
-## 📚 Tài Liệu Bổ Sung
+## 📚 Additional Documentation
 
-### 🔗 Tài Liệu Chính Thức
+### 🔗 Official Documentation
 
 - 📖 [Laravel Documentation](https://laravel.com/docs/13.x)
 - 📘 [Livewire Documentation](https://livewire.laravel.com)
@@ -1249,20 +1248,20 @@ php artisan cache:clear
 
 ### 📁 Project Files
 
-- [Architecture Diagram](#-kiến-trúc)
+- [Architecture Diagram](#-architecture)
 - [Database Schema](#database-schema)
 - [API Routes](#-api-documentation)
-- [Commands Reference](#-các-lệnh-artisan-số-học)
+- [Commands Reference](#-artisan-commands)
 
 ### 💡 Best Practices
 
 #### Tenant Isolation
 ```php
-// ✅ Luôn filter theo tenant
+// ✅ Always filter by tenant
 $projects = Project::where('tenant_id', auth()->user()->current_tenant_id)->get();
 
-// ✅ Hoặc dùng global scope
-$projects = Project::all();  // Đã filtered by tenant
+// ✅ Or rely on the global scope
+$projects = Project::all();  // Already filtered by tenant
 ```
 
 #### Query Optimization
@@ -1273,7 +1272,7 @@ $tenants = Tenant::with('users', 'projects')->get();
 // ✅ Use select() to limit columns
 $tenants = Tenant::select('id', 'name', 'slug')->get();
 
-// ✅ Pagination
+// ✅ Use pagination
 $tenants = Tenant::paginate(15);
 ```
 
@@ -1299,26 +1298,26 @@ try {
 
 ### 🐛 Report Issues
 
-Nếu bạn tìm thấy bug, vui lòng tạo issue trên GitHub:
+If you find a bug, please open an issue on GitHub:
 
-1. Mô tả vấn đề chi tiết
-2. Cung cấp stack trace/error message
-3. Các bước để reproduce
-4. Environment info (PHP version, Laravel version, etc.)
+1. Describe the problem in detail
+2. Provide the stack trace / error message
+3. List the steps to reproduce
+4. Include environment info (PHP version, Laravel version, etc.)
 
 ### 🤝 Contributing
 
-Chúng tôi chào đón pull requests!
+Pull requests are welcome!
 
 ```bash
-# 1. Fork repository
-# 2. Tạo feature branch
+# 1. Fork the repository
+# 2. Create a feature branch
 git checkout -b feature/amazing-feature
 
-# 3. Commit changes
+# 3. Commit your changes
 git commit -m 'Add some amazing feature'
 
-# 4. Push to branch
+# 4. Push to the branch
 git push origin feature/amazing-feature
 
 # 5. Open a Pull Request
@@ -1334,7 +1333,7 @@ git push origin feature/amazing-feature
 
 ## 📄 License
 
-Dự án này được cấp phép dưới [MIT License](LICENSE). Xem file LICENSE để chi tiết.
+This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.
 
 ---
 
@@ -1351,7 +1350,7 @@ Dự án này được cấp phép dưới [MIT License](LICENSE). Xem file LICE
 
 **Made with ❤️ for the Laravel Community**
 
-⭐ Nếu bạn thích dự án này, vui lòng star repo!
+⭐ If you find this project useful, please star the repo!
 
 [⬆ Back to top](#-dashboard-sass---multi-tenant-saas-platform)
 
