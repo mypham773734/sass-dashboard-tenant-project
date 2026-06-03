@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Application\Tenant\DTOs\UpdateTenantDTO;
@@ -9,6 +9,7 @@ use App\Application\Tenant\UseCases\DeleteTenantUseCase;
 use App\Application\Tenant\UseCases\FindTenantBySlugUseCase;
 use App\Application\Tenant\UseCases\GetTenantsUseCase;
 use App\Application\Tenant\UseCases\UpdateTenantUseCase;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use Illuminate\Support\Facades\Log;
@@ -25,58 +26,73 @@ class TenantController extends Controller
 
     public function index()
     {
-        try{
+        try {
             $tenants = $this->getTenantsUseCase->execute(auth()->id());
-            
+
             return view('admin.pages.tenant.index', compact('tenants'));
-        }catch(\Exception $e){
-            $error = $e; 
-            Log::error($e->getMessage()); 
-            Log::error($e->getTrace()); 
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to load tenants.');
         }
     }
 
     public function create()
     {
-        return view('admin.pages.tenant.create');
+        try {
+            return view('admin.pages.tenant.create');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to load page.');
+        }
     }
 
     public function store(StoreTenantRequest $request)
     {
         try {
-            $dto    = CreateTenantDTO::fromArray($request->validated());
-            $tenant = $this->createTenantUseCase->execute($dto, auth()->id());
+            $dto = CreateTenantDTO::fromArray($request->validated());
+            $this->createTenantUseCase->execute($dto, auth()->id());
 
             return redirect()
                 ->route('tenant.index')
                 ->with('success', 'Tenant created successfully.');
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to create tenant.')->withInput();
         }
     }
 
     public function edit(string $tenantSlug)
     {
-        $tenant = $this->findTenantBySlugUseCase->execute($tenantSlug, auth()->id());
+        try {
+            $tenant = $this->findTenantBySlugUseCase->execute($tenantSlug, auth()->id());
 
-        if (! $tenant) {
-            abort(404);
+            if (! $tenant) {
+                abort(404);
+            }
+
+            return view('admin.pages.tenant.create', ['tenant' => $tenant]);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to load tenant.');
         }
-
-        return view('admin.pages.tenant.create', ['tenant' => $tenant]);
     }
 
     public function update(UpdateTenantRequest $request, string $tenantSlug)
     {
         try {
-            $dto    = UpdateTenantDTO::fromArray($request->validated());
-            $tenant = $this->updateTenantUseCase->execute($tenantSlug, $dto);
+            $dto = UpdateTenantDTO::fromArray($request->validated());
+            $this->updateTenantUseCase->execute($tenantSlug, $dto);
 
             return redirect()
                 ->route('tenant.index')
                 ->with('success', 'Tenant updated successfully.');
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage())->withInput();
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to update tenant.')->withInput();
         }
     }
 
@@ -94,6 +110,9 @@ class TenantController extends Controller
                 ->with('success', 'Tenant deleted successfully.');
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', 'Failed to delete tenant.');
         }
     }
 }

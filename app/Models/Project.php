@@ -3,11 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Tenant; 
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
-    public function tenant(){
-        return $this->belongsTo(Tenant::class); 
+    use SoftDeletes;
+
+    protected $fillable = [
+        'tenant_id',
+        'onwer_id',
+        'name',
+        'description',
+        'status',
+    ];
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

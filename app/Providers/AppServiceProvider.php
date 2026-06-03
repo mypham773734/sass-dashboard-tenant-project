@@ -25,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Infrastructure\Persistence\Repositories\EloquentTenantRepository::class,
         );
 
+        $this->app->bind(
+            \App\Domain\Project\Repositories\ProjectRepositoryInterface::class,
+            \App\Infrastructure\Persistence\Repositories\EloquentProjectRepository::class,
+        );
+
         // ── Legacy Service bindings (kept while parallel refactor is in progress) ──
         $this->app->bind(
             \App\Services\Contracts\TenantServiceInterface::class,
