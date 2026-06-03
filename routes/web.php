@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('/tenant', TenantController::class);
         Route::resource('/project', ProjectController::class)->middleware('chooseTenant');
+        Route::resource('/task', TaskController::class)->middleware('chooseTenant');
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');
