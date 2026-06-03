@@ -18,11 +18,14 @@
 
     <div class="flex h-screen overflow-hidden">
 
+        <!-- Mobile sidebar overlay -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden"></div>
+
         <!-- ======================= SIDEBAR ======================= -->
         @include('admin.partials.sidebar')
 
         <!-- ======================= MAIN CONTENT (RIGHT SIDE) ======================= -->
-        <div class="flex-1 ml-72 flex flex-col h-screen overflow-hidden">
+        <div class="flex-1 lg:ml-72 flex flex-col h-screen overflow-hidden">
 
             <!-- ======================= HEADER ======================= -->
             @include('admin.partials.header')

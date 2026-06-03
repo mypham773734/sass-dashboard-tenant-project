@@ -1,7 +1,7 @@
 <?php 
-    if(isset($tenant)){
-        // echo json_encode($tenant);
-    }
+    // if(isset($tenant)){
+    //     echo json_encode($tenant);
+    // }
     // die(); 
 ?>
 
@@ -45,14 +45,14 @@
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Vai trò <span class="text-red-500">*</span></label>
                     <select name="is_active" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
-                        <option value="1" {{ isset($tenant) && $tenant->is_active ? 'selected' : '' }}>Active</option>
-                        <option value="0" {{ isset($tenant) && !$tenant->is_active ? 'selected' : '' }}>No Active</option>
+                        <option value="1" {{ isset($tenant) && $tenant->isActive ? 'selected' : '' }}>Active</option>
+                        <option value="0" {{ isset($tenant) && !$tenant->isActive ? 'selected' : '' }}>No Active</option>
                     </select>
                 </div>
 
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Trial End at <span class="text-red-500">*</span></label>
-                    <input type="date" name="trial_ends_at" required value="{{ isset($tenant) ? date('Y-m-d', strtotime($tenant->trial_ends_at)) : '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <input type="date" name="trial_ends_at" required value="{{ isset($tenant) && $tenant->trialEndsAt ? $tenant->trialEndsAt->format('Y-m-d') : '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
             </div>
 

@@ -75,21 +75,21 @@
                         </tr>
                     </thead>
                     <tbody id="data-table-body" class="divide-y divide-gray-200">
-                        @if(isset($tenants) && $tenants->count() > 0)
+                        @if(isset($tenants) && count($tenants) > 0)
                         @foreach($tenants as $tenant)
                         <tr>
                             <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->id }}</td>
                             <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->name }}</td>
                             <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->slug }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->is_active }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->trial_ends_at }}</td>
-                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->created_at }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ $tenant->isActive }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">{{ isset($tenant->trialEndsAt) ? $tenant->trialEndsAt->format('Y-m-d H:i:s') : "" }}</td>
+                            <td class="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider"></td>
                             <td class="px-6 py-3 text-right text-xs text-gray-600 uppercase tracking-wider flex justify-end gap-2">
                                 <a href="{{route('tenant.edit', $tenant->slug)}}" class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition h-fit">
                                     <i class="fas fa-edit"></i>
                                 </a>
 
-                                <!-- Nút Xóa -->
+                                <!-- Button Remove -->
                                 <form action="{{ route('tenant.destroy', $tenant->slug) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
@@ -106,7 +106,7 @@
                 </table>
             </div>
             <!-- Empty State -->
-            @if(!isset($tenants) || $tenants->count() < 1)
+            @if(!isset($tenants) || count($tenants) < 1)
                 <div id="empty-state" class="hidden py-12 text-center">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

@@ -1,11 +1,6 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
-
 // Auto-import all pages
 Object.values(import.meta.glob('./pages/**/*.js', { eager: true }));
 
-window.Alpine = Alpine;
-
-// Initialize Alpine
-Alpine.start();
+// Alpine is initialized by Livewire's @livewireScripts — do not start a second instance.

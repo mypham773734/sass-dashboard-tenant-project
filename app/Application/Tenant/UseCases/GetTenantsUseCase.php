@@ -14,11 +14,8 @@ class GetTenantsUseCase
         private readonly TenantRepositoryInterface $tenantRepository,
     ) {}
 
-    /**
-     * @return \App\Domain\Tenant\Entities\TenantEntity[]
-     */
-    public function execute(int $userId): array
+    public function execute(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return $this->tenantRepository->findAllByUserId($userId);
+        return $this->tenantRepository->findAllByUserId($userId, $perPage);
     }
 }

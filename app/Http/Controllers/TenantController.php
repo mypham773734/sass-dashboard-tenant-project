@@ -6,25 +6,34 @@ use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Application\Tenant\DTOs\UpdateTenantDTO;
 use App\Application\Tenant\UseCases\CreateTenantUseCase;
 use App\Application\Tenant\UseCases\DeleteTenantUseCase;
+use App\Application\Tenant\UseCases\FindTenantBySlugUseCase;
 use App\Application\Tenant\UseCases\GetTenantsUseCase;
 use App\Application\Tenant\UseCases\UpdateTenantUseCase;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
+use Illuminate\Support\Facades\Log;
 
 class TenantController extends Controller
 {
     public function __construct(
-        private readonly GetTenantsUseCase  $getTenantsUseCase,
-        private readonly CreateTenantUseCase $createTenantUseCase,
-        private readonly UpdateTenantUseCase $updateTenantUseCase,
-        private readonly DeleteTenantUseCase $deleteTenantUseCase,
+        private readonly GetTenantsUseCase       $getTenantsUseCase,
+        private readonly FindTenantBySlugUseCase $findTenantBySlugUseCase,
+        private readonly CreateTenantUseCase     $createTenantUseCase,
+        private readonly UpdateTenantUseCase     $updateTenantUseCase,
+        private readonly DeleteTenantUseCase     $deleteTenantUseCase,
     ) {}
 
     public function index()
     {
-        $tenants = $this->getTenantsUseCase->execute(auth()->id());
-
-        return view('admin.pages.tenant.index', compact('tenants'));
+        try{
+            $tenants = $this->getTenantsUseCase->execute(auth()->id());
+            
+            return view('admin.pages.tenant.index', compact('tenants'));
+        }catch(\Exception $e){
+            $error = $e; 
+            Log::error($e->getMessage()); 
+            Log::error($e->getTrace()); 
+        }
     }
 
     public function create()
@@ -48,18 +57,13 @@ class TenantController extends Controller
 
     public function edit(string $tenantSlug)
     {
-        $tenant = $this->getTenantsUseCase
-            ->execute(auth()->id());
+        $tenant = $this->findTenantBySlugUseCase->execute($tenantSlug, auth()->id());
 
-        // Find the specific tenant from the already-scoped list.
-        $tenantEntity = collect($tenant)
-            ->first(fn ($t) => $t->slug === $tenantSlug);
-
-        if (! $tenantEntity) {
+        if (! $tenant) {
             abort(404);
         }
 
-        return view('admin.pages.tenant.create', ['tenant' => $tenantEntity]);
+        return view('admin.pages.tenant.create', ['tenant' => $tenant]);
     }
 
     public function update(UpdateTenantRequest $request, string $tenantSlug)

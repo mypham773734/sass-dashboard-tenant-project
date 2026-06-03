@@ -16,15 +16,12 @@ use Illuminate\Support\Facades\DB;
  */
 class EloquentTenantRepository implements TenantRepositoryInterface
 {
-    public function findAllByUserId(int $userId): array
+    public function findAllByUserId(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        // withoutGlobalScope: we scope manually here instead of relying on
-        // TenantScope, so the repository controls the tenant isolation logic.
         return Tenant::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
             ->whereHas('users', fn ($q) => $q->where('users.id', $userId))
-            ->get()
-            ->map(fn (Tenant $model) => $this->toEntity($model))
-            ->all();
+            ->paginate($perPage)
+            ->through(fn (Tenant $model) => $this->toEntity($model));
     }
 
     public function findById(int $id): ?TenantEntity

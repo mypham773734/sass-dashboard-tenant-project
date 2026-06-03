@@ -11,11 +11,9 @@ use App\Domain\Tenant\Entities\TenantEntity;
 interface TenantRepositoryInterface
 {
     /**
-     * Return all tenants that the given user belongs to.
-     *
-     * @return TenantEntity[]
+     * Return a paginated list of tenants that the given user belongs to.
      */
-    public function findAllByUserId(int $userId): array;
+    public function findAllByUserId(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
     public function findById(int $id): ?TenantEntity;
 

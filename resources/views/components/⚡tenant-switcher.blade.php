@@ -2,56 +2,120 @@
 
 use App\Models\Tenant;
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 new class extends Component
 {
-    public $tenantId;
-    public $tenants;
+    public ?int $tenantId = null;
+    public string $errorMessage = '';
 
-    public function mount()
+    public function mount(): void
     {
         $this->tenantId = session('current_tenant_id');
-        $this->tenants = Tenant::all();
-
     }
 
-    public function switchTenant($tenantId)
+    #[Computed]
+    public function tenants()
     {
-        $user = Auth::user();
+        // TenantScope tự động filter chỉ tenant của user hiện tại
+        return Tenant::all();
+    }
 
-        // Bắt buộc kiểm tra bảo mật
-        // Đảm bảo User thuộc tenant này để tránh hack ID
-        $isBelong = $user->tenants()->where('tenant_id', $tenantId)->exists();
+    public function switchTenant(int $tenantId): void
+    {
+        $this->errorMessage = '';
 
-        if ($isBelong) {
-            // Set session 
-            session()->put('current_tenant_id', $tenantId);
-            session()->flash('message', 'Chuyển đổi workspace thành công');
+        // Query trực tiếp qua relation để verify ownership + get fresh state
+        /** @var \App\Models\User $user */
+        $user   = Auth::user();
+        $tenant = $user->tenants()->find($tenantId);
 
-            $this->tenantId = $tenantId;
-        } else {
-            session()->flash('message', 'Bạn không có quyển truy cập vào workspace này');
-            $this->tenantId = session('current_tenant_id');
+        if (! $tenant) {
+            $this->errorMessage = 'Bạn không có quyền truy cập vào workspace này.';
+            return;
         }
+
+        if (! $tenant->is_active) {
+            $this->errorMessage = 'Workspace này hiện không hoạt động.';
+            return;
+        }
+
+        session()->put('current_tenant_id', $tenantId);
+
+        $this->redirect('/admin');
     }
 };
 
 ?>
 
-<div>
-    <div class="relative">
-        <button id="dropdownMenuBtn" class="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition rounded-full px-3 py-2 text-sm font-medium">
-            {{ optional(Tenant::find($this->tenantId))->name ?? 'Chưa có tenant' }}
-            <i class="fas fa-chevron-down text-xs"></i>
+<div x-data="{ open: false }" class="relative">
+
+    {{-- Error toast --}}
+    @if($this->errorMessage)
+    <div
+        wire:key="toast-{{ $this->errorMessage }}"
+        x-data="{ visible: true }"
+        x-init="setTimeout(() => visible = false, 4000)"
+        x-show="visible"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-1"
+        class="absolute top-12 right-0 z-50 flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-xl shadow-md whitespace-nowrap"
+    >
+        <i class="fas fa-exclamation-circle text-red-500 text-xs"></i>
+        <span>{{ $this->errorMessage }}</span>
+        <button @click="visible = false" class="ml-1 text-red-400 hover:text-red-600 leading-none">
+            <i class="fas fa-times text-xs"></i>
         </button>
-        @if (isset($this->tenants))
-        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-30">
-            @foreach ($this->tenants as $tenant)
-            <button wire:click="switchTenant({{ $tenant->id }})" class="block w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">{{ $tenant->name }}</button>
-            @endforeach
-        </div>
-        @endif
     </div>
+    @endif
+
+    {{-- Trigger button --}}
+    <button
+        @click="open = !open"
+        class="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition rounded-full px-3 py-2 text-sm font-medium"
+    >
+        {{ $this->tenants->firstWhere('id', $this->tenantId)?->name ?? 'Chọn workspace' }}
+        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+    </button>
+
+    {{-- Dropdown --}}
+    <div
+        x-show="open"
+        @click.outside="open = false"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-100"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-30"
+    >
+        @forelse($this->tenants as $tenant)
+        <button
+            wire:click="switchTenant({{ $tenant->id }})"
+            @click="open = false"
+            @class([
+                'flex items-center justify-between w-full px-4 py-2 text-sm transition',
+                'text-indigo-600 font-medium bg-indigo-50' => $tenant->id === $this->tenantId,
+                'text-slate-700 hover:bg-slate-50'         => $tenant->id !== $this->tenantId,
+                'opacity-50'                               => ! $tenant->is_active,
+            ])
+        >
+            <span>{{ $tenant->name }}</span>
+            <span class="flex items-center gap-1.5 shrink-0">
+                @if(! $tenant->is_active)
+                    <span class="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full leading-tight">Inactive</span>
+                @endif
+                @if($tenant->id === $this->tenantId)
+                    <i class="fas fa-check text-xs text-indigo-500"></i>
+                @endif
+            </span>
+        </button>
+        @empty
+        <p class="px-4 py-3 text-sm text-slate-400 text-center">Chưa có workspace nào.</p>
+        @endforelse
+    </div>
+
 </div>
