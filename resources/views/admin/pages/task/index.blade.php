@@ -1,6 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
+
 <main class="flex-1 overflow-y-auto p-5 md:p-7 bg-gradient-to-b from-slate-50 to-white">
 
     {{-- Header + Actions --}}
@@ -180,14 +181,11 @@
                                        class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('task.destroy', $task->id) }}" method="POST"
-                                          onsubmit="return confirm('Delete this task?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            @click="$dispatch('confirm-action', {action: '{{ route('task.destroy', $task->id) }}'})"
+                                            class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -221,6 +219,14 @@
             </div>
         @endif
     </div>
+
+    <x-confirm-modal
+        id="task-delete"
+        title="Delete Task"
+        message="This action cannot be undone. The task will be permanently deleted."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous="true" />
 
 </main>
 @endsection

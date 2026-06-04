@@ -10,7 +10,7 @@ $maxWidthClass = [
 ][$maxWidth];
 @endphp
 
-@if($show)
+@if($show || true)
 <div id="{{ $id }}" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <!-- Overlay -->
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>

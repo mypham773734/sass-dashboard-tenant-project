@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\TaskController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,15')->name('login.store');
 });
 
 Route::middleware('auth')->group(function () {
