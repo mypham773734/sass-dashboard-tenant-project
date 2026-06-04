@@ -5,31 +5,71 @@ namespace App\Infrastructure\Persistence\Repositories;
 use App\Domain\Project\Entities\ProjectEntity;
 use App\Domain\Project\Repositories\ProjectRepositoryInterface;
 use App\Models\Project;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class EloquentProjectRepository implements ProjectRepositoryInterface
 {
+    private const TTL_SHORT  = 300;
+    private const TTL_MEDIUM = 600;
+
     public function findAllByTenantId(int $tenantId, int $perPage = 10): LengthAwarePaginator
     {
-        return Project::where('tenant_id', $tenantId)
-            ->paginate($perPage)
-            ->through(fn (Project $model) => $this->toEntity($model));
+        $page = request()->input('page', 1);
+
+        $cached = Cache::tags(["tenant:{$tenantId}:projects"])
+            ->remember("tenant:{$tenantId}:projects:page:{$page}:per:{$perPage}", self::TTL_SHORT, function () use ($tenantId, $perPage) {
+                $paginator = Project::where('tenant_id', $tenantId)->paginate($perPage);
+                return [
+                    'total'        => $paginator->total(),
+                    'per_page'     => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'items'        => collect($paginator->items())->map(fn (Project $m) => $m->toArray())->all(),
+                ];
+            });
+
+        $items = collect($cached['items'])->map(fn (array $row) => $this->toEntityFromArray($row));
+
+        return new LengthAwarePaginator(
+            $items,
+            $cached['total'],
+            $cached['per_page'],
+            $cached['current_page'],
+            ['path' => request()->url(), 'query' => request()->query()],
+        );
+    }
+
+    public function getAllByTenantId(int $tenantId): Collection
+    {
+        $rows = Cache::tags(["tenant:{$tenantId}:projects"])
+            ->remember("tenant:{$tenantId}:projects:all", self::TTL_SHORT, function () use ($tenantId) {
+                return Project::where('tenant_id', $tenantId)
+                    ->get()
+                    ->map(fn (Project $m) => $m->toArray())
+                    ->all();
+            });
+
+        return collect($rows)->map(fn (array $row) => $this->toEntityFromArray($row));
     }
 
     public function findById(int $id, int $tenantId): ?ProjectEntity
     {
-        $model = Project::where('id', $id)
-            ->where('tenant_id', $tenantId)
-            ->first();
+        $data = Cache::tags(["tenant:{$tenantId}:projects"])
+            ->remember("tenant:{$tenantId}:project:{$id}", self::TTL_MEDIUM, function () use ($id, $tenantId) {
+                return Project::where('id', $id)->where('tenant_id', $tenantId)->first()?->toArray();
+            });
 
-        return $model ? $this->toEntity($model) : null;
+        return $data ? $this->toEntityFromArray($data) : null;
     }
 
     public function create(ProjectEntity $entity): ProjectEntity
     {
         $model = Project::create($this->toArray($entity));
 
-        return $this->toEntity($model);
+        Cache::tags(["tenant:{$entity->tenantId}:projects"])->flush();
+
+        return $this->toEntityFromArray($model->toArray());
     }
 
     public function update(ProjectEntity $entity): ProjectEntity
@@ -40,28 +80,34 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
 
         $model->update($this->toArray($entity));
 
-        return $this->toEntity($model->fresh());
+        Cache::tags(["tenant:{$entity->tenantId}:projects"])->flush();
+
+        return $this->toEntityFromArray($model->fresh()->toArray());
     }
 
     public function delete(int $id, int $tenantId): bool
     {
-        return (bool) Project::where('id', $id)
+        $result = (bool) Project::where('id', $id)
             ->where('tenant_id', $tenantId)
             ->firstOrFail()
             ->delete();
+
+        Cache::tags(["tenant:{$tenantId}:projects"])->flush();
+
+        return $result;
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
-    private function toEntity(Project $model): ProjectEntity
+    private function toEntityFromArray(array $data): ProjectEntity
     {
         return new ProjectEntity(
-            id:          $model->id,
-            tenantId:    $model->tenant_id,
-            ownerId:     $model->onwer_id,  // note: DB column has typo
-            name:        $model->name,
-            status:      $model->status,
-            description: $model->description,
+            id:          $data['id'],
+            tenantId:    $data['tenant_id'],
+            ownerId:     $data['onwer_id'],
+            name:        $data['name'],
+            status:      $data['status'],
+            description: $data['description'] ?? null,
         );
     }
 
@@ -69,7 +115,7 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
     {
         return [
             'tenant_id'   => $entity->tenantId,
-            'onwer_id'    => $entity->ownerId,  // note: DB column has typo
+            'onwer_id'    => $entity->ownerId,
             'name'        => $entity->name,
             'status'      => $entity->status,
             'description' => $entity->description,

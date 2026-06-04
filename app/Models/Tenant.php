@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Project; 
 use App\Models\Scopes\TenantScope; 
 
+/**
+ * @property int         $id
+ * @property string      $name
+ * @property string      $slug
+ * @property bool        $is_active
+ * @property string|null $trial_ends_at
+ * @property string|null $settings
+ */
 class Tenant extends Model
 {
     protected $fillable = [

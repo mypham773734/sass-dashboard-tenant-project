@@ -31,7 +31,7 @@
         </x-sidebar-link>
 
         <!-- Tasks -->
-        <x-sidebar-link route="#">
+        <x-sidebar-link route="task.index">
             <i class="fas fa-tasks w-5"></i>
             <span>Tasks</span>
         </x-sidebar-link>

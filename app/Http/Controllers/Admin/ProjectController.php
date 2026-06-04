@@ -7,7 +7,7 @@ use App\Application\Project\DTOs\UpdateProjectDTO;
 use App\Application\Project\UseCases\CreateProjectUseCase;
 use App\Application\Project\UseCases\DeleteProjectUseCase;
 use App\Application\Project\UseCases\FindProjectByIdUseCase;
-use App\Application\Project\UseCases\GetProjectsUseCase;
+use App\Application\Project\UseCases\GetAllProjectsUseCase;
 use App\Application\Project\UseCases\UpdateProjectUseCase;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProjectRequest;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 class ProjectController extends Controller
 {
     public function __construct(
-        private readonly GetProjectsUseCase      $getProjectsUseCase,
+        private readonly GetAllProjectsUseCase   $getAllProjectsUseCase,
         private readonly FindProjectByIdUseCase  $findProjectByIdUseCase,
         private readonly CreateProjectUseCase    $createProjectUseCase,
         private readonly UpdateProjectUseCase    $updateProjectUseCase,
@@ -28,7 +28,7 @@ class ProjectController extends Controller
     {
         try {
             $tenantId = session('current_tenant_id');
-            $projects = $this->getProjectsUseCase->execute($tenantId);
+            $projects = $this->getAllProjectsUseCase->execute($tenantId);
 
             return view('admin.pages.project.index', compact('projects'));
         } catch (\Exception $e) {

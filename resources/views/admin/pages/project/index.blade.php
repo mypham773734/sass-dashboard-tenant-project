@@ -86,7 +86,7 @@
                                     {{ ucfirst($project->status) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $project->created_at->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">created_at</td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ route('project.edit', $project->id) }}"
@@ -125,13 +125,10 @@
             </table>
         </div>
 
-        {{-- Pagination --}}
-        @if($projects->hasPages())
-            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div class="text-sm text-gray-500">
-                    Showing {{ $projects->firstItem() }}–{{ $projects->lastItem() }} of {{ $projects->total() }}
-                </div>
-                {{ $projects->links() }}
+        {{-- Row count --}}
+        @if($projects->isNotEmpty())
+            <div class="px-6 py-4 border-t border-gray-200">
+                <p class="text-sm text-gray-500">{{ $projects->count() }} project(s)</p>
             </div>
         @endif
     </div>

@@ -1,15 +1,18 @@
-<?php 
+<?php
 
 namespace App\Application\Task\UseCases;
 
+use App\Domain\Task\Repositories\TaskRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 class GetTasksUseCase
 {
-    public function __construct()
+    public function __construct(
+        private readonly TaskRepositoryInterface $taskRepository,
+    ) {}
+
+    public function execute(int $tenantId, int $perPage = 10): LengthAwarePaginator
     {
-        // Dependency injection can be done here
-    }
-
-    public function execute(){
-
+        return $this->taskRepository->findAllByTenantId($tenantId, $perPage);
     }
 }

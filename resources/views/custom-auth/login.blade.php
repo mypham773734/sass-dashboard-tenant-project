@@ -60,10 +60,10 @@
           <p class="text-slate-500 text-sm font-medium mt-1.5">Smart dashboard · insights at glance</p>
         </div>
 
-        <!-- Error Message Container (ẩn mặc định) -->
-        <div id="errorBox" class="hidden mb-5 bg-red-50 border-l-4 border-red-500 rounded-xl p-3 flex items-center gap-2 text-red-700 text-sm font-medium">
+        <!-- Error Message Container -->
+        <div id="errorBox" class="{{ $errors->any() ? '' : 'hidden' }} mb-5 bg-red-50 border-l-4 border-red-500 rounded-xl p-3 flex items-center gap-2 text-red-700 text-sm font-medium">
           <i class="fas fa-exclamation-circle text-red-500"></i>
-          <span id="errorText">Invalid credentials</span>
+          <span id="errorText">{{ $errors->first('message') ?: 'Invalid credentials' }}</span>
         </div>
 
         <!-- Login Form -->
@@ -76,7 +76,7 @@
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-envelope text-slate-400 text-sm"></i>
               </div>
-              <input type="email" id="email" name="email" value="test@example.com"
+              <input type="email" id="email" name="email" value="{{ old('email') }}"
                 class="w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-slate-800 text-sm"
                 placeholder="admin@flowsaas.com" autocomplete="email">
             </div>
@@ -91,7 +91,7 @@
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fas fa-lock text-slate-400 text-sm"></i>
               </div>
-              <input type="password" id="password" name="password" value="ngocmy01"
+              <input type="password" id="password" name="password"
                 class="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-slate-800 text-sm"
                 placeholder="••••••••" autocomplete="current-password">
               <button type="button" id="togglePasswordBtn" class="toggle-pwd-btn absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-indigo-600 transition">

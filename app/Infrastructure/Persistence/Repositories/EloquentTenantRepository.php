@@ -5,46 +5,72 @@ namespace App\Infrastructure\Persistence\Repositories;
 use App\Domain\Tenant\Entities\TenantEntity;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Models\Tenant;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
-/**
- * Eloquent implementation of TenantRepositoryInterface.
- *
- * This class is the only place in the entire codebase allowed to touch
- * the Tenant Eloquent model. Everything above (Domain, Application) only
- * sees TenantEntity.
- */
 class EloquentTenantRepository implements TenantRepositoryInterface
 {
-    public function findAllByUserId(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    private const TTL_SHORT  = 300;
+    private const TTL_MEDIUM = 600;
+    private const TTL_LONG   = 900;
+
+    public function findAllByUserId(int $userId, int $perPage = 10): LengthAwarePaginator
     {
-        return Tenant::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
-            ->whereHas('users', fn ($q) => $q->where('users.id', $userId))
-            ->paginate($perPage)
-            ->through(fn (Tenant $model) => $this->toEntity($model));
+        $page = request()->input('page', 1);
+
+        $cached = Cache::tags(["user:{$userId}:tenants"])
+            ->remember("user:{$userId}:tenants:page:{$page}:per:{$perPage}", self::TTL_SHORT, function () use ($userId, $perPage) {
+                $paginator = Tenant::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                    ->whereHas('users', fn ($q) => $q->where('users.id', $userId))
+                    ->paginate($perPage);
+                return [
+                    'total'        => $paginator->total(),
+                    'per_page'     => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'items'        => collect($paginator->items())->map(fn (Tenant $m) => $m->toArray())->all(),
+                ];
+            });
+
+        $items = collect($cached['items'])->map(fn (array $row) => $this->toEntityFromArray($row));
+
+        return new LengthAwarePaginator(
+            $items,
+            $cached['total'],
+            $cached['per_page'],
+            $cached['current_page'],
+            ['path' => request()->url(), 'query' => request()->query()],
+        );
     }
 
     public function findById(int $id): ?TenantEntity
     {
-        $model = Tenant::withoutGlobalScopes()->find($id);
+        $data = Cache::tags(["tenant:{$id}"])
+            ->remember("tenant:id:{$id}", self::TTL_MEDIUM, function () use ($id) {
+                return Tenant::withoutGlobalScopes()->find($id)?->toArray();
+            });
 
-        return $model ? $this->toEntity($model) : null;
+        return $data ? $this->toEntityFromArray($data) : null;
     }
 
     public function findBySlug(string $slug): ?TenantEntity
     {
-        $model = Tenant::withoutGlobalScopes()
-            ->where('slug', $slug)
-            ->first();
+        $data = Cache::tags(["tenants:slugs"])
+            ->remember("tenant:slug:{$slug}", self::TTL_LONG, function () use ($slug) {
+                return Tenant::withoutGlobalScopes()
+                    ->where('slug', $slug)
+                    ->first()?->toArray();
+            });
 
-        return $model ? $this->toEntity($model) : null;
+        return $data ? $this->toEntityFromArray($data) : null;
     }
 
     public function create(TenantEntity $entity): TenantEntity
     {
         $model = Tenant::create($this->toArray($entity));
 
-        return $this->toEntity($model);
+        Cache::tags(["tenants:slugs"])->flush();
+
+        return $this->toEntityFromArray($model->toArray());
     }
 
     public function update(TenantEntity $entity): TenantEntity
@@ -52,14 +78,20 @@ class EloquentTenantRepository implements TenantRepositoryInterface
         $model = Tenant::withoutGlobalScopes()->findOrFail($entity->id);
         $model->update($this->toArray($entity));
 
-        return $this->toEntity($model->fresh());
+        Cache::tags(["tenant:{$entity->id}", "tenants:slugs"])->flush();
+
+        return $this->toEntityFromArray($model->fresh()->toArray());
     }
 
     public function forceDelete(int $id): bool
     {
-        return (bool) Tenant::withoutGlobalScopes()
+        $result = (bool) Tenant::withoutGlobalScopes()
             ->findOrFail($id)
             ->forceDelete();
+
+        Cache::tags(["tenant:{$id}", "tenants:slugs"])->flush();
+
+        return $result;
     }
 
     public function attachUser(int $tenantId, int $userId, string $role): void
@@ -68,14 +100,22 @@ class EloquentTenantRepository implements TenantRepositoryInterface
             ->findOrFail($tenantId)
             ->users()
             ->attach($userId, ['role' => $role]);
+
+        Cache::tags(["user:{$userId}:tenants"])->flush();
     }
 
     public function detachAllUsers(int $tenantId): void
     {
-        Tenant::withoutGlobalScopes()
-            ->findOrFail($tenantId)
-            ->users()
-            ->detach();
+        $tenant  = Tenant::withoutGlobalScopes()->findOrFail($tenantId);
+        $userIds = $tenant->users()->pluck('users.id');
+
+        $tenant->users()->detach();
+
+        foreach ($userIds as $userId) {
+            Cache::tags(["user:{$userId}:tenants"])->flush();
+        }
+
+        Cache::tags(["tenant:{$tenantId}"])->flush();
     }
 
     public function hasUser(int $tenantId, int $userId): bool
@@ -89,17 +129,15 @@ class EloquentTenantRepository implements TenantRepositoryInterface
 
     // ── Mapping helpers ───────────────────────────────────────────────────────
 
-    private function toEntity(Tenant $model): TenantEntity
+    private function toEntityFromArray(array $data): TenantEntity
     {
         return new TenantEntity(
-            id:          $model->id,
-            name:        $model->name,
-            slug:        $model->slug,
-            isActive:    (bool) $model->is_active,
-            trialEndsAt: $model->trial_ends_at
-                ? new \DateTime($model->trial_ends_at)
-                : null,
-            settings:    $model->settings,
+            id:          $data['id'],
+            name:        $data['name'],
+            slug:        $data['slug'],
+            isActive:    (bool) $data['is_active'],
+            trialEndsAt: $data['trial_ends_at'] ? new \DateTime($data['trial_ends_at']) : null,
+            settings:    $data['settings'],
         );
     }
 

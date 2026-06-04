@@ -1,17 +1,23 @@
-<?php 
+<?php
 
 namespace App\Application\Task\UseCases;
 
+use App\Domain\Task\Repositories\TaskRepositoryInterface;
+
 class DeleteTaskUseCase
 {
-    public function __construct()
-    {
-        // Constructor code, if needed
-    }
+    public function __construct(
+        private readonly TaskRepositoryInterface $taskRepository,
+    ) {}
 
-    public function execute(): void
+    public function execute(int $id, int $tenantId): void
     {
-        // Logic to delete the task with the given ID
-        // This could involve calling a repository or service to perform the deletion
+        $task = $this->taskRepository->findById($id, $tenantId);
+
+        if (! $task) {
+            throw new \DomainException('Task not found.');
+        }
+
+        $this->taskRepository->delete($id, $tenantId);
     }
 }
