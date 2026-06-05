@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Project; 
-use App\Models\Scopes\TenantScope; 
+use App\Models\Project;
+use App\Models\Scopes\TenantScope;
 
 /**
  * @property int         $id
@@ -16,6 +17,7 @@ use App\Models\Scopes\TenantScope;
  */
 class Tenant extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'name',
         'slug',

@@ -39,7 +39,7 @@ erDiagram
     TENANT ||--o{ ROLE : "scopes"
     TENANT ||--o{ PERMISSION : "scopes"
     TASK ||--o{ USER : "created_by"
-    TASK ||--o{ USER : "assigned_to"
+    TASK ||--o{ USER : "assigned_id"
     
     USER {
         int id

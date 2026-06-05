@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
         //     'trial_ends_at' => now()->addDays(30),
         //     'settings' => json_encode(['theme' => 'dark', 'currency' => 'EUR']),
         // ]);
-        
+
+        $this->call(RolePermissionSeeder::class);
     }
 }

@@ -134,6 +134,4 @@
     </div>
 
 </main>
-
-<x-modal></x-modal>
 @endsection

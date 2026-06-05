@@ -10,6 +10,7 @@
             <h3 class="text-2xl font-bold text-gray-900">Tasks</h3>
             <p class="text-gray-500 mt-1">Manage and track all tasks across projects.</p>
         </div>
+        @can('create', [\App\Models\Task::class, session('current_tenant_id')])
         <a href="{{ route('task.create') }}"
            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap font-medium">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -17,6 +18,7 @@
             </svg>
             New Task
         </a>
+        @endcan
     </div>
 
     {{-- Flash messages --}}
@@ -129,6 +131,13 @@
                             };
                             $isOverdue = $task->status !== 'done' && $task->dueDate < date('Y-m-d');
                         @endphp
+                        @php
+                            $taskModel = new \App\Models\Task([
+                                'tenant_id'  => $task->tenantId,
+                                'created_by' => $task->createdBy,
+                                'assignee_id'=> $task->assigneeId,
+                            ]);
+                        @endphp
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 text-sm font-medium text-gray-900" style="max-width: 180px;">
                                 {{ $task->title }}
@@ -177,15 +186,19 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex justify-end gap-2">
+                                    @can('update', $taskModel)
                                     <a href="{{ route('task.edit', $task->id) }}"
                                        class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @endcan
+                                    @can('delete', $taskModel)
                                     <button type="button"
                                             @click="$dispatch('confirm-action', {action: '{{ route('task.destroy', $task->id) }}'})"
                                             class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -198,10 +211,12 @@
                                 </svg>
                                 <h3 class="mt-2 text-sm font-medium text-gray-900">No tasks found</h3>
                                 <p class="mt-1 text-sm text-gray-500">Get started by creating a new task.</p>
+                                @can('create', [\App\Models\Task::class, session('current_tenant_id')])
                                 <a href="{{ route('task.create') }}"
                                    class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
                                     New Task
                                 </a>
+                                @endcan
                             </td>
                         </tr>
                     @endforelse
@@ -219,14 +234,6 @@
             </div>
         @endif
     </div>
-
-    <x-confirm-modal
-        id="task-delete"
-        title="Delete Task"
-        message="This action cannot be undone. The task will be permanently deleted."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous="true" />
 
 </main>
 @endsection
