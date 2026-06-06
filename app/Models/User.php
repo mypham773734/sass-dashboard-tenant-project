@@ -26,6 +26,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function getAvatarAttribute(): ?string
+    {
+        return UserMeta::where('user_id', $this->id)->where('key', 'avatar')->value('value');
+    }
+
     public function tenants()
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user', 'user_id', 'tenant_id');

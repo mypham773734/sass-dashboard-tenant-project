@@ -1,153 +1,120 @@
-# Permission & RBAC — Complete Documentation
+# Permission & RBAC — Entry Point
 
-**Feature:** Role-Based Access Control (RBAC) using spatie/laravel-permission  
-**Status:** Approved for implementation (Approach B selected)  
-**Timeline:** 3-4 days implementation  
-**Last Updated:** 2026-06-04
-
----
-
-## 📚 Complete Specification
-
-This folder contains the complete specification, design, and implementation plan for the Permission/RBAC feature.
-
-### Reading Order
-
-1. **[00-OVERVIEW.md](./00-OVERVIEW.md)** ← **START HERE**
-   - Problem statement
-   - Solution summary
-   - Business value
-   - Success criteria
-   - Timeline (3-4 days)
-
-2. **[01-REQUIREMENTS.md](./01-REQUIREMENTS.md)**
-   - 6 Roles: Owner, Admin, Manager, Member, Guest, Custom
-   - 25 Permissions across Tenant, Project, Task, Team, Dashboard
-   - Functional & non-functional requirements
-   - Testing strategy
-
-3. **[02-ARCHITECTURE.md](./02-ARCHITECTURE.md)** ← **MOST IMPORTANT**
-   - System overview with diagrams (Mermaid)
-   - Data model (ER diagram)
-   - Authorization layers (3-layer defense)
-   - Permission check flow (sequence diagram)
-   - Clean architecture integration
-   - Performance & security model
-
-4. **[03-APPROACHES.md](./03-APPROACHES.md)**
-   - Option A: Simple (session-based) — rejected
-   - Option B: Extended Spatie — **SELECTED ✅**
-   - Option C: Global scopes — rejected
-   - Comparison table
-   - Decision rationale
-
-5. **[04-IMPLEMENTATION_PLAN_B.md](./04-IMPLEMENTATION_PLAN_B.md)** ← **FOR DEVELOPERS**
-   - Step-by-step implementation guide
-   - 4 Phases, 3 days
-   - Code snippets for each step
-   - Database migrations
-   - Seeder with 6 roles × 25 permissions
-   - Test strategy
-   - Checklist & rollback plan
+**Feature:** Role-Based Access Control (RBAC) using `spatie/laravel-permission`
+**Status:** Approved — Approach B selected, ready to implement
+**Last Updated:** 2026-06-06
 
 ---
 
-## 🎯 Key Decisions
+## Problem
 
-| Decision | Value | Why |
-|---|---|---|
-| **Approach** | B: Extended Spatie | Safe, explicit, scalable |
-| **Tenant Scoping** | Explicit tenant_id | Prevent data leaks |
-| **Cache Strategy** | Redis tags | Fast + safe invalidation |
-| **Authorization Layers** | 3 (Route → Controller → Policy) | Defense in depth |
-| **Permission Count** | 25 (5 domain × ~5 perms) | Cover all actions |
-| **Role Count** | 6 (Owner, Admin, Manager, Member, Guest, Custom) | Flexible hierarchy |
+All authenticated users have full access to tenant data. No RBAC exists:
 
----
+- Guest can delete projects they shouldn't touch
+- No audit trail of who did what
+- Cannot restrict data by role
+- Not safe for team collaboration
 
-## 📊 Diagrams in This Documentation
+## Solution
 
-All diagrams are embedded as Mermaid code and render automatically:
+RBAC with explicit tenant-scoped roles and permissions:
 
-1. **System Overview Flow** — Request lifecycle with permission checking
-2. **Data Model** — Role/Permission relationships with tenant scoping
-3. **Authorization Layers** — 3-layer defense mechanism
-4. **Permission Check Sequence** — Detailed flow with caching
-5. **Clean Architecture Integration** — How RBAC fits in layers
-6. **Role Hierarchy** — 6 roles with approximate permissions
-7. **Caching Strategy** — Redis tags with invalidation
+- **6 roles:** Owner, Admin, Manager, Member, Guest (+ Custom placeholder)
+- **26 permissions:** Covering Tenant, Project, Task, Team, Dashboard operations
+- **Tenant-scoped:** Each tenant has independent roles and permissions
+- **3-layer defense:** Route middleware → Controller authorize → Policy
+
+**Core principle:** Explicit over implicit — `tenant_id` always passed explicitly, never hidden in session magic.
 
 ---
 
-## 🚀 Implementation Readiness
+## Decision: Approach B (Extended Spatie + Tenant-Aware Models)
 
-### Prerequisites ✅
-- [x] spatie/laravel-permission v7.3 installed
+Three approaches were evaluated. **Approach B** was selected. Summary:
+
+| | A: Session-scoped | **B: Extended Spatie ✅** | C: Global Scopes |
+|---|---|---|---|
+| Complexity | Low | Medium | High |
+| Data safety | Medium (fragile session) | High (explicit) | High |
+| Multi-tenant user support | No | Yes (future-ready) | Yes |
+| Debuggability | Hard | Easy | Medium |
+| Suitable for | MVP | **This project** | Enterprise |
+
+**Why B, not A:** Session state is fragile. Cannot unit test without session. Cannot scale to user in multiple tenants.
+
+**Why B, not C:** Global scopes hide behavior, harder to debug, higher risk of scope leaks, steep team learning curve.
+
+---
+
+## Reading Order
+
+1. **[01-REQUIREMENTS.md](./01-REQUIREMENTS.md)** — Permission matrix (canonical), roles, testable criteria
+2. **[02-ARCHITECTURE.md](./02-ARCHITECTURE.md)** — System design, diagrams, security model, file structure
+3. **[03-IMPLEMENTATION.md](./03-IMPLEMENTATION.md)** — Step-by-step code, 4 phases, 3 days
+
+---
+
+## Quick Reference
+
+### Roles (6)
+
+| Role | Can do |
+|---|---|
+| **Owner** | Everything — created the tenant |
+| **Admin** | Manage team + projects + tasks, cannot delete tenant |
+| **Manager** | Create/manage projects & tasks, limited team visibility |
+| **Member** | Own tasks only (create, edit own, view own) |
+| **Guest** | View-only |
+| **Custom** | Placeholder for future user-defined roles |
+
+### Key APIs (Approach B)
+
+```php
+// Check permission in specific tenant (Controller, Policy)
+Auth::user()->hasPermissionInTenant('task:create', $tenantId);
+
+// Check role in specific tenant
+Auth::user()->hasRoleInTenant('owner', $tenantId);
+
+// Get user's roles in tenant
+Auth::user()->rolesForTenant($tenantId);
+```
+
+### Permission naming convention
+
+```
+resource:action
+
+Examples:
+  task:create        task:edit_own       task:delete_all
+  project:view       tenant:invite_user  team:manage
+```
+
+### 3-Layer Authorization
+
+```
+Layer 1 — Route middleware:    ->middleware('can:task:create')
+Layer 2 — Controller:          $this->authorize('create', [Task::class, $tenantId])
+Layer 3 — Policy:              TaskPolicy::create(User $user, int $tenantId): bool
+```
+
+---
+
+## Prerequisites (already satisfied)
+
+- [x] `spatie/laravel-permission` v7.3 installed
 - [x] Laravel 13 running
 - [x] Redis available
-- [x] Clean architecture in place (Domain → Application → Infrastructure)
-
-### Before Starting ✅
-- [x] All 5 documents written & approved
-- [x] Approach B selected & justified
-- [x] Requirements signed off
-- [x] Architecture reviewed
-- [x] Team familiar with Spatie (docs provided)
-
-### Go/No-Go Checklist
-- [ ] All 5 docs reviewed & approved by team
-- [ ] Database backup taken
-- [ ] Development environment ready
-- [ ] Team available for 3-4 days
-- [ ] Testing environment prepared
+- [x] Clean architecture in place
 
 ---
 
-## 📝 Implementation Quick Start
+## Timeline
 
-**For the developer assigned to implement:**
-
-1. Read [04-IMPLEMENTATION_PLAN_B.md](./04-IMPLEMENTATION_PLAN_B.md)
-2. Follow Phase 1 (Day 1 morning)
-3. Follow Phase 2 (Day 1 afternoon)
-4. Follow Phase 3 (Day 2 morning)
-5. Follow Phase 4 (Day 2-3)
-6. Update this README with completion date
-
----
-
-## 🔗 Related Docs
-
-- **Root docs:** [../../README.md](../../README.md)
-- **Documentation standard:** [../../DOCUMENTATION_STANDARD.md](../../DOCUMENTATION_STANDARD.md)
-- **Product overview:** [../README.md](../README.md)
-
----
-
-## ✅ Sign-Off
-
-| Role | Name | Date | Status |
-|---|---|---|---|
-| **Product Lead** | [TBD] | [TBD] | ⏳ Pending |
-| **Architect** | [TBD] | 2026-06-04 | ✅ Approved |
-| **Tech Lead** | [TBD] | [TBD] | ⏳ Pending |
-| **QA Lead** | [TBD] | [TBD] | ⏳ Pending |
-
----
-
-## 📌 Version History
-
-| Version | Date | Changes | Author |
-|---|---|---|---|
-| 1.0 | 2026-06-04 | Complete specification with Approach B approved | Architecture |
-
----
-
-## Questions?
-
-- **What's the scope?** → Read [00-OVERVIEW.md](./00-OVERVIEW.md)
-- **How does it work?** → Read [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) (with diagrams)
-- **Why Approach B?** → Read [03-APPROACHES.md](./03-APPROACHES.md)
-- **How do I build it?** → Read [04-IMPLEMENTATION_PLAN_B.md](./04-IMPLEMENTATION_PLAN_B.md)
-- **What do I need to know?** → Read [01-REQUIREMENTS.md](./01-REQUIREMENTS.md)
-
+| Phase | Work | Duration |
+|---|---|---|
+| 1 | DB migrations + extend models | Day 1 morning |
+| 2 | Seeder + Policies | Day 1 afternoon |
+| 3 | Routes + Controllers | Day 2 morning |
+| 4 | UI (@can directives) + Tests | Day 2–3 |
+| **Total** | | **3 days** |

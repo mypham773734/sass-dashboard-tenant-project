@@ -2,66 +2,81 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Application\User\DTOs\ChangePasswordDTO;
+use App\Application\User\DTOs\UpdateProfileDTO;
+use App\Application\User\UseCases\ChangePasswordUseCase;
+use App\Application\User\UseCases\GetProfileUseCase;
+use App\Application\User\UseCases\UpdateProfileUseCase;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    public function edit(Request $request): View
+    public function __construct(
+        private readonly GetProfileUseCase     $getProfileUseCase,
+        private readonly UpdateProfileUseCase  $updateProfileUseCase,
+        private readonly ChangePasswordUseCase $changePasswordUseCase,
+    ) {}
+
+    public function show()
     {
         try {
-            return view('profile.edit', [
-                'user' => $request->user(),
-            ]);
+            $profile = $this->getProfileUseCase->execute(auth()->id());
+            return view('admin.pages.profile.index', compact('profile'));
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            abort(500);
+            return back()->with('error', 'Failed to load profile.');
         }
     }
 
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(UpdateProfileRequest $request)
     {
         try {
-            $request->user()->fill($request->validated());
+            $avatarPath = null;
 
-            if ($request->user()->isDirty('email')) {
-                $request->user()->email_verified_at = null;
+            if ($request->hasFile('avatar')) {
+                $profile   = $this->getProfileUseCase->execute(auth()->id());
+                $oldAvatar = $profile->avatar;
+
+                if ($oldAvatar) {
+                    Storage::disk('public')->delete($oldAvatar);
+                }
+
+                $ext        = $request->file('avatar')->getClientOriginalExtension();
+                $avatarPath = $request->file('avatar')
+                    ->storeAs('avatars', auth()->id() . '.' . $ext, 'public');
             }
 
-            $request->user()->save();
+            $dto = UpdateProfileDTO::fromArray(
+                array_merge($request->validated(), ['avatar_path' => $avatarPath])
+            );
 
-            return Redirect::route('profile.edit')->with('status', 'profile-updated');
+            $this->updateProfileUseCase->execute($dto, auth()->id());
+
+            return redirect()->route('profile.show')->with('success', 'Profile updated successfully.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return back()->with('error', 'Failed to update profile.')->withInput();
         }
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function changePassword(ChangePasswordRequest $request)
     {
         try {
-            $request->validateWithBag('userDeletion', [
-                'password' => ['required', 'current_password'],
-            ]);
+            $dto = ChangePasswordDTO::fromArray($request->validated());
+            $this->changePasswordUseCase->execute($dto, auth()->id());
 
-            $user = $request->user();
-
-            Auth::logout();
-            $user->delete();
-
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return Redirect::to('/');
+            return redirect()->route('profile.show')->with('success', 'Password changed successfully.');
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            return back()->with('error', 'Failed to delete account.');
+            return back()->with('error', 'Failed to change password.');
         }
     }
 }

@@ -77,16 +77,28 @@
     </nav>
 
     <!-- User profile bottom sidebar -->
+    @php
+        $authUser  = auth()->user();
+        $initials  = strtoupper(substr($authUser->name, 0, 1))
+                   . strtoupper(substr(strrchr($authUser->name, ' ') ?: ' x', 1, 1));
+        $avatarVal = $authUser->avatar;
+    @endphp
     <div class="p-4 border-t border-slate-100 mt-auto">
-        <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-50">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow">
-                JD
-            </div>
+        <a href="{{ route('profile.show') }}" class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+            @if($avatarVal)
+                <img src="{{ asset('storage/' . $avatarVal) }}"
+                     class="w-10 h-10 rounded-full object-cover shadow"
+                     alt="avatar">
+            @else
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                    {{ $initials }}
+                </div>
+            @endif
             <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-slate-700 truncate">John Doe</p>
-                <p class="text-xs text-slate-400 truncate">john@flowsaas.com</p>
+                <p class="text-sm font-semibold text-slate-700 truncate">{{ $authUser->name }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ $authUser->email }}</p>
             </div>
             <i class="fas fa-chevron-right text-slate-400 text-xs"></i>
-        </div>
+        </a>
     </div>
 </aside>

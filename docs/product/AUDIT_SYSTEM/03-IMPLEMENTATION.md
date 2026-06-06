@@ -1,49 +1,30 @@
-# Audit System — Implementation Plan
+# Audit System — Implementation Guide
 
----
-Version: 1.1
-Last Updated: 2026-06-06
-Status: Approved
-Author: Architecture Team
-Approach: D — AuditLogger Service + Laravel Auth Events (Hybrid)
+**Approach:** D — AuditLogger Service (Hybrid)
+**Duration:** 4 days
+
+> Event taxonomy and data structure are defined in [01-REQUIREMENTS.md](./01-REQUIREMENTS.md).
+> System diagrams are in [02-ARCHITECTURE.md](./02-ARCHITECTURE.md).
+
 ---
 
 ## Phase Overview
 
-```mermaid
-gantt
-    title Audit System Implementation
-    dateFormat  YYYY-MM-DD
-    section Phase 1: Foundation
-    Migration + AuditLog Model        :p1a, 2026-06-07, 0.25d
-    Domain Entity + Repository        :p1b, after p1a, 0.25d
-    EloquentAuditRepository           :p1c, after p1b, 0.25d
-    WriteAuditLogJob                  :p1d, after p1c, 0.25d
-    section Phase 2: AuditLogger Service
-    AuditLoggerInterface              :p2a, after p1d, 0.25d
-    QueuedAuditLogger                 :p2b, after p2a, 0.25d
-    NullAuditLogger (for tests)       :p2c, after p2b, 0.25d
-    AppServiceProvider bindings       :p2d, after p2c, 0.25d
-    section Phase 3: Integration
-    Inject vào Task Use Cases         :p3a, after p2d, 0.25d
-    Inject vào Project Use Cases      :p3b, after p3a, 0.25d
-    Inject vào Permission/Role code   :p3c, after p3b, 0.25d
-    AuthAuditListener (auth events)   :p3d, after p3c, 0.25d
-    section Phase 4: UI Viewer
-    GetAuditLogsUseCase               :p4a, after p3d, 0.25d
-    AuditController + Route           :p4b, after p4a, 0.25d
-    Blade View (timeline)             :p4c, after p4b, 0.5d
-    section Phase 5: Testing
-    Feature Tests                     :p5, after p4c, 0.5d
+```
+Phase 1 (Day 1 morning)   — DB migration + Domain layer + Repository + Queue Job
+Phase 2 (Day 1 afternoon) — AuditLogger interface + implementations + bindings
+Phase 3 (Day 2)           — Inject into Use Cases + AuthAuditListener
+Phase 4 (Day 3)           — Audit viewer (UseCase + Controller + Blade)
+Phase 5 (Day 4 morning)   — Tests
 ```
 
 ---
 
 ## Phase 1: Foundation
 
-### 1.1 Migration
+### 1.1 — Migration
 
-**File:** `database/migrations/2026_06_06_000000_create_audit_logs_table.php`
+`database/migrations/2026_06_06_create_audit_logs_table.php`
 
 ```php
 Schema::create('audit_logs', function (Blueprint $table) {
@@ -59,7 +40,7 @@ Schema::create('audit_logs', function (Blueprint $table) {
     $table->text('user_agent')->nullable();
     $table->json('metadata')->nullable();
     $table->timestamp('created_at')->useCurrent();
-    // Không có updated_at — audit log là immutable
+    // No updated_at — immutable
 
     $table->index(['tenant_id', 'created_at']);
     $table->index(['tenant_id', 'user_id']);
@@ -68,11 +49,19 @@ Schema::create('audit_logs', function (Blueprint $table) {
 });
 ```
 
-### 1.2 Domain Entity
+```bash
+php artisan migrate
+```
 
-**File:** `app/Domain/Audit/Entities/AuditLog.php`
+---
+
+### 1.2 — Domain Entity
+
+`app/Domain/Audit/Entities/AuditLog.php`
 
 ```php
+<?php
+
 namespace App\Domain\Audit\Entities;
 
 class AuditLog
@@ -94,11 +83,15 @@ class AuditLog
 }
 ```
 
-### 1.3 Repository Interface
+---
 
-**File:** `app/Domain/Audit/Repositories/AuditRepositoryInterface.php`
+### 1.3 — Repository Interface
+
+`app/Domain/Audit/Repositories/AuditRepositoryInterface.php`
 
 ```php
+<?php
+
 namespace App\Domain\Audit\Repositories;
 
 use App\Domain\Audit\Entities\AuditLog;
@@ -111,11 +104,15 @@ interface AuditRepositoryInterface
 }
 ```
 
-### 1.4 Eloquent Model
+---
 
-**File:** `app/Models/AuditLog.php`
+### 1.4 — Eloquent Model
+
+`app/Models/AuditLog.php`
 
 ```php
+<?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -137,11 +134,21 @@ class AuditLog extends Model
 }
 ```
 
-### 1.5 Eloquent Repository
+---
 
-**File:** `app/Infrastructure/Persistence/Repositories/EloquentAuditRepository.php`
+### 1.5 — Eloquent Repository
+
+`app/Infrastructure/Persistence/Repositories/EloquentAuditRepository.php`
 
 ```php
+<?php
+
+namespace App\Infrastructure\Persistence\Repositories;
+
+use App\Domain\Audit\Entities\AuditLog;
+use App\Domain\Audit\Repositories\AuditRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 class EloquentAuditRepository implements AuditRepositoryInterface
 {
     public function create(AuditLog $entity): void
@@ -197,11 +204,24 @@ class EloquentAuditRepository implements AuditRepositoryInterface
 }
 ```
 
-### 1.6 WriteAuditLogJob
+---
 
-**File:** `app/Infrastructure/Queue/Jobs/WriteAuditLogJob.php`
+### 1.6 — WriteAuditLogJob
+
+`app/Infrastructure/Queue/Jobs/WriteAuditLogJob.php`
 
 ```php
+<?php
+
+namespace App\Infrastructure\Queue\Jobs;
+
+use App\Domain\Audit\Entities\AuditLog;
+use App\Domain\Audit\Repositories\AuditRepositoryInterface;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+
 class WriteAuditLogJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
@@ -234,31 +254,37 @@ class WriteAuditLogJob implements ShouldQueue
 
 ## Phase 2: AuditLogger Service
 
-### 2.1 Interface
+### 2.1 — AuditLoggerInterface
 
-**File:** `app/Application/Audit/AuditLoggerInterface.php`
+`app/Application/Audit/AuditLoggerInterface.php`
 
 ```php
+<?php
+
 namespace App\Application\Audit;
 
 interface AuditLoggerInterface
 {
     public function log(
         string  $action,
-        ?int    $entityId    = null,
-        ?string $entityType  = null,
-        ?array  $newValues   = null,
-        ?array  $oldValues   = null,
-        ?array  $metadata    = null,
+        ?int    $entityId   = null,
+        ?string $entityType = null,
+        ?array  $newValues  = null,
+        ?array  $oldValues  = null,
+        ?array  $metadata   = null,
     ): void;
 }
 ```
 
-### 2.2 QueuedAuditLogger (Production)
+---
 
-**File:** `app/Infrastructure/Audit/QueuedAuditLogger.php`
+### 2.2 — QueuedAuditLogger (production)
+
+`app/Infrastructure/Audit/QueuedAuditLogger.php`
 
 ```php
+<?php
+
 namespace App\Infrastructure\Audit;
 
 use App\Application\Audit\AuditLoggerInterface;
@@ -278,8 +304,8 @@ class QueuedAuditLogger implements AuditLoggerInterface
             return;
         }
 
-        // Capture context ngay tại đây — trước khi dispatch
-        // Job chỉ nhận data array, không truy cập session/request
+        // Capture context here — before dispatch.
+        // The job only receives plain data; it never accesses session or request.
         WriteAuditLogJob::dispatch([
             'tenant_id'   => session('current_tenant_id'),
             'user_id'     => auth()->id(),
@@ -296,11 +322,15 @@ class QueuedAuditLogger implements AuditLoggerInterface
 }
 ```
 
-### 2.3 NullAuditLogger (Tests)
+---
 
-**File:** `app/Infrastructure/Audit/NullAuditLogger.php`
+### 2.3 — NullAuditLogger (tests)
+
+`app/Infrastructure/Audit/NullAuditLogger.php`
 
 ```php
+<?php
+
 namespace App\Infrastructure\Audit;
 
 use App\Application\Audit\AuditLoggerInterface;
@@ -309,9 +339,22 @@ class NullAuditLogger implements AuditLoggerInterface
 {
     private array $logs = [];
 
-    public function log(string $action, ?int $entityId = null, ...): void
-    {
-        $this->logs[] = ['action' => $action, 'entity_id' => $entityId];
+    public function log(
+        string  $action,
+        ?int    $entityId   = null,
+        ?string $entityType = null,
+        ?array  $newValues  = null,
+        ?array  $oldValues  = null,
+        ?array  $metadata   = null,
+    ): void {
+        $this->logs[] = [
+            'action'      => $action,
+            'entity_id'   => $entityId,
+            'entity_type' => $entityType,
+            'new_values'  => $newValues,
+            'old_values'  => $oldValues,
+            'metadata'    => $metadata,
+        ];
     }
 
     public function assertLogged(string $action): bool
@@ -331,10 +374,13 @@ class NullAuditLogger implements AuditLoggerInterface
 }
 ```
 
-### 2.4 Bindings trong AppServiceProvider
+---
+
+### 2.4 — Bindings in AppServiceProvider
+
+`app/Providers/AppServiceProvider.php` — add to `register()`:
 
 ```php
-// Bindings audit
 $this->app->bind(
     \App\Application\Audit\AuditLoggerInterface::class,
     \App\Infrastructure\Audit\QueuedAuditLogger::class,
@@ -348,14 +394,38 @@ $this->app->bind(
 
 ---
 
-## Phase 3: Integration vào Use Cases
+### 2.5 — Config
 
-### 3.1 Pattern chung cho CRUD Use Cases
-
-**Inject `AuditLoggerInterface` + gọi `$this->audit->log()` sau operation thành công:**
+`config/audit.php`
 
 ```php
-// CreateTaskUseCase.php
+<?php
+
+return [
+    'enabled'        => env('AUDIT_ENABLED', true),
+    'retention_days' => env('AUDIT_RETENTION_DAYS', 90),
+];
+```
+
+`.env`:
+```
+AUDIT_ENABLED=true
+AUDIT_RETENTION_DAYS=90
+```
+
+Set `AUDIT_ENABLED=false` in `.env.testing` to skip audit writes during unrelated tests.
+
+---
+
+## Phase 3: Integration into Use Cases
+
+### 3.1 — Pattern for CRUD Use Cases
+
+Inject `AuditLoggerInterface` and call `$this->audit->log()` after a successful operation.
+
+**Create:**
+
+```php
 class CreateTaskUseCase
 {
     public function __construct(
@@ -384,13 +454,13 @@ class CreateTaskUseCase
 }
 ```
 
+**Update — capture oldValues BEFORE the update:**
+
 ```php
-// UpdateTaskUseCase.php — capture oldValues TRƯỚC khi update
 public function execute(int $id, int $tenantId, UpdateTaskDTO $dto): TaskEntity
 {
     $existing = $this->repo->findById($id, $tenantId);
 
-    // Capture trước khi update
     $oldValues = [
         'title'    => $existing->title,
         'status'   => $existing->status,
@@ -415,12 +485,12 @@ public function execute(int $id, int $tenantId, UpdateTaskDTO $dto): TaskEntity
 }
 ```
 
+**Delete — snapshot BEFORE delete:**
+
 ```php
-// DeleteTaskUseCase.php — snapshot trước khi xoá
 public function execute(int $id, int $tenantId): void
 {
     $task = $this->repo->findById($id, $tenantId);
-
     $snapshot = ['title' => $task->title, 'status' => $task->status];
 
     $this->repo->delete($id, $tenantId);
@@ -434,22 +504,33 @@ public function execute(int $id, int $tenantId): void
 }
 ```
 
-### 3.2 Use Cases cần update
+### 3.2 — All Use Cases to update
 
 | Use Case | Action | old_values | new_values |
 |---|---|---|---|
-| `CreateTaskUseCase` | `task.created` | null | title, status, priority |
+| `CreateTaskUseCase` | `task.created` | null | title, status, priority, project_id |
 | `UpdateTaskUseCase` | `task.updated` | title, status, priority | title, status, priority |
 | `DeleteTaskUseCase` | `task.deleted` | title, status | null |
 | `CreateProjectUseCase` | `project.created` | null | name, description |
 | `UpdateProjectUseCase` | `project.updated` | name | name |
 | `DeleteProjectUseCase` | `project.deleted` | name | null |
 
-### 3.3 AuthAuditListener (Auth events — Laravel built-in)
+---
 
-**File:** `app/Http/Listeners/AuthAuditListener.php`
+### 3.3 — AuthAuditListener
+
+`app/Infrastructure/Listeners/AuthAuditListener.php`
 
 ```php
+<?php
+
+namespace App\Infrastructure\Listeners;
+
+use App\Infrastructure\Queue\Jobs\WriteAuditLogJob;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+
 class AuthAuditListener
 {
     public function handleLogin(Login $event): void
@@ -479,34 +560,41 @@ class AuthAuditListener
     public function handleLogout(Logout $event): void
     {
         WriteAuditLogJob::dispatch([
-            'tenant_id' => null,
-            'user_id'   => $event->user?->id,
-            'action'    => 'auth.logout',
-            'ip_address'=> request()->ip(),
+            'tenant_id'  => null,
+            'user_id'    => $event->user?->id,
+            'action'     => 'auth.logout',
+            'ip_address' => request()->ip(),
         ]);
     }
 }
 ```
 
-**Register trong `EventServiceProvider`:**
+Register in `app/Providers/EventServiceProvider.php`:
 
 ```php
 protected $listen = [
-    \Illuminate\Auth\Events\Login::class   => [AuthAuditListener::class . '@handleLogin'],
-    \Illuminate\Auth\Events\Failed::class  => [AuthAuditListener::class . '@handleFailed'],
-    \Illuminate\Auth\Events\Logout::class  => [AuthAuditListener::class . '@handleLogout'],
+    \Illuminate\Auth\Events\Login::class  => [\App\Infrastructure\Listeners\AuthAuditListener::class . '@handleLogin'],
+    \Illuminate\Auth\Events\Failed::class => [\App\Infrastructure\Listeners\AuthAuditListener::class . '@handleFailed'],
+    \Illuminate\Auth\Events\Logout::class => [\App\Infrastructure\Listeners\AuthAuditListener::class . '@handleLogout'],
 ];
 ```
 
 ---
 
-## Phase 4: UI Viewer
+## Phase 4: Audit Viewer
 
-### 4.1 GetAuditLogsUseCase
+### 4.1 — GetAuditLogsUseCase
 
-**File:** `app/Application/Audit/UseCases/GetAuditLogsUseCase.php`
+`app/Application/Audit/UseCases/GetAuditLogsUseCase.php`
 
 ```php
+<?php
+
+namespace App\Application\Audit\UseCases;
+
+use App\Domain\Audit\Repositories\AuditRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 class GetAuditLogsUseCase
 {
     public function __construct(
@@ -520,11 +608,25 @@ class GetAuditLogsUseCase
 }
 ```
 
-### 4.2 AuditController
+---
 
-**File:** `app/Http/Controllers/Admin/AuditController.php`
+### 4.2 — AuditController
+
+`app/Http/Controllers/Admin/AuditController.php`
 
 ```php
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Application\Audit\UseCases\GetAuditLogsUseCase;
+use App\Http\Controllers\Controller;
+use App\Models\Tenant;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
 class AuditController extends Controller
 {
     public function __construct(
@@ -535,7 +637,7 @@ class AuditController extends Controller
     {
         try {
             $tenantId = session('current_tenant_id');
-            $this->authorize('viewAuditLog', Tenant::find($tenantId));
+            $this->authorize('viewAuditLog', Tenant::findOrFail($tenantId));
 
             $filters = $request->only(['user_id', 'action', 'from', 'to']);
             $logs    = $this->getAuditLogsUseCase->execute($tenantId, $filters);
@@ -551,82 +653,187 @@ class AuditController extends Controller
 }
 ```
 
-### 4.3 Route
+---
+
+### 4.3 — Route
+
+`routes/web.php`:
 
 ```php
-Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+Route::middleware(['auth', 'can:audit:view'])->group(function () {
+    Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+});
 ```
 
-### 4.4 TenantPolicy — thêm method
+---
+
+### 4.4 — TenantPolicy — add method
+
+`app/Policies/TenantPolicy.php`:
 
 ```php
-// app/Policies/TenantPolicy.php
 public function viewAuditLog(User $user, Tenant $tenant): bool
 {
     return $user->hasPermissionInTenant('audit:view', $tenant->id);
 }
 ```
 
+> **Also add `audit:view` to RolePermissionSeeder** — Owner and Admin roles need this permission.
+> See [PERMISSION_RBAC/03-IMPLEMENTATION.md](../PERMISSION_RBAC/03-IMPLEMENTATION.md) — update the `$matrix` array.
+
 ---
 
-## Phase 5: Testing
+### 4.5 — Blade view (minimal structure)
 
-### Test Pattern — Mock AuditLogger
+`resources/views/admin/pages/audit/index.blade.php`:
+
+```blade
+<div class="space-y-2">
+    @foreach ($logs as $log)
+    <div class="border rounded p-4">
+        <div class="flex gap-2 items-center">
+            <span class="font-medium">{{ $log->user?->name ?? 'System' }}</span>
+            <span class="text-gray-500">{{ $log->action }}</span>
+            <span class="text-sm text-gray-400">{{ $log->created_at->diffForHumans() }}</span>
+        </div>
+        @if ($log->old_values || $log->new_values)
+        <details class="mt-2 text-sm">
+            <summary>Details</summary>
+            <pre>{{ json_encode(['before' => $log->old_values, 'after' => $log->new_values], JSON_PRETTY_PRINT) }}</pre>
+        </details>
+        @endif
+    </div>
+    @endforeach
+
+    {{ $logs->withQueryString()->links() }}
+</div>
+```
+
+---
+
+## Phase 5: Tests
+
+### Test setup — swap AuditLogger
 
 ```php
-class CreateTaskAuditTest extends TestCase
+// In TestCase setUp or per test
+$nullLogger = new NullAuditLogger();
+$this->app->instance(AuditLoggerInterface::class, $nullLogger);
+```
+
+### Test cases
+
+`tests/Feature/AuditLogTest.php`
+
+```php
+<?php
+
+namespace Tests\Feature;
+
+use App\Application\Audit\AuditLoggerInterface;
+use App\Infrastructure\Audit\NullAuditLogger;
+use App\Models\{User, Task, Project, Tenant, Role};
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class AuditLogTest extends TestCase
 {
-    #[Test]
-    public function creating_task_logs_audit_event(): void
+    use RefreshDatabase;
+
+    private NullAuditLogger $audit;
+    private Tenant $tenant;
+    private Task $task;
+    private User $owner;
+    private User $member;
+
+    protected function setUp(): void
     {
-        $nullLogger = new NullAuditLogger();
-        $this->app->instance(AuditLoggerInterface::class, $nullLogger);
+        parent::setUp();
 
-        $this->actingAs($this->owner)
-            ->withSession(['current_tenant_id' => $this->tenant->id])
-            ->post(route('task.store'), $this->validTaskData);
+        $this->audit = new NullAuditLogger();
+        $this->app->instance(AuditLoggerInterface::class, $this->audit);
 
-        $this->assertTrue($nullLogger->assertLogged('task.created'));
+        $this->tenant = Tenant::factory()->create();
+        $project = Project::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->task = Task::factory()->create(['tenant_id' => $this->tenant->id, 'project_id' => $project->id]);
+
+        $this->owner = User::factory()->create();
+        $this->member = User::factory()->create();
+
+        $ownerRole = Role::where('name', 'owner')->where('tenant_id', $this->tenant->id)->first();
+        $memberRole = Role::where('name', 'member')->where('tenant_id', $this->tenant->id)->first();
+        $this->owner->assignRole($ownerRole);
+        $this->member->assignRole($memberRole);
     }
 
-    #[Test]
-    public function updating_task_records_old_and_new_values(): void
+    /** @test */
+    public function creating_task_logs_task_created(): void
     {
-        $nullLogger = new NullAuditLogger();
-        $this->app->instance(AuditLoggerInterface::class, $nullLogger);
-
         $this->actingAs($this->owner)
             ->withSession(['current_tenant_id' => $this->tenant->id])
-            ->put(route('task.update', $this->task->id), ['title' => 'New Title', ...]);
+            ->post(route('task.store'), ['title' => 'Test', 'status' => 'todo', 'priority' => 'medium', 'project_id' => $this->task->project_id]);
 
-        $log = collect($nullLogger->getLogs())->firstWhere('action', 'task.updated');
+        $this->assertTrue($this->audit->assertLogged('task.created'));
+    }
+
+    /** @test */
+    public function updating_task_records_old_and_new_values(): void
+    {
+        $this->actingAs($this->owner)
+            ->withSession(['current_tenant_id' => $this->tenant->id])
+            ->put(route('task.update', $this->task->id), ['title' => 'Updated', 'status' => 'done']);
+
+        $log = collect($this->audit->getLogs())->firstWhere('action', 'task.updated');
         $this->assertNotNull($log['old_values']);
         $this->assertNotNull($log['new_values']);
+    }
+
+    /** @test */
+    public function deleting_task_logs_task_deleted_with_snapshot(): void
+    {
+        $this->actingAs($this->owner)
+            ->withSession(['current_tenant_id' => $this->tenant->id])
+            ->delete(route('task.destroy', $this->task->id));
+
+        $log = collect($this->audit->getLogs())->firstWhere('action', 'task.deleted');
+        $this->assertNotNull($log['old_values']);
+        $this->assertNull($log['new_values']);
+    }
+
+    /** @test */
+    public function audit_viewer_accessible_by_owner(): void
+    {
+        $this->actingAs($this->owner)
+            ->withSession(['current_tenant_id' => $this->tenant->id])
+            ->get(route('audit.index'))
+            ->assertStatus(200);
+    }
+
+    /** @test */
+    public function audit_viewer_blocked_for_member(): void
+    {
+        $this->actingAs($this->member)
+            ->withSession(['current_tenant_id' => $this->tenant->id])
+            ->get(route('audit.index'))
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function cross_tenant_audit_isolation(): void
+    {
+        $otherTenant = Tenant::factory()->create();
+
+        $this->actingAs($this->owner)
+            ->withSession(['current_tenant_id' => $otherTenant->id])
+            ->get(route('audit.index'))
+            ->assertStatus(403);
     }
 }
 ```
 
-### Test Cases cần cover
-
-```
-✓ creating task → logs task.created với new_values đúng
-✓ updating task → logs task.updated với old_values và new_values đúng
-✓ deleting task → logs task.deleted với snapshot của task cũ
-✓ creating project → logs project.created
-✓ login thành công → logs auth.login
-✓ login thất bại → logs auth.login_failed với email trong metadata
-✓ logout → logs auth.logout
-✓ audit viewer accessible by owner
-✓ audit viewer accessible by admin
-✓ audit viewer NOT accessible by member
-✓ audit viewer NOT accessible by guest
-✓ cross-tenant: không thể xem logs của tenant khác
-✓ audit log không bị xoá khi entity bị delete
-```
-
 ---
 
-## Checklist Tổng
+## Implementation Checklist
 
 ### Phase 1 — Foundation
 - [ ] Migration `create_audit_logs_table` + `php artisan migrate`
@@ -640,35 +847,36 @@ class CreateTaskAuditTest extends TestCase
 - [ ] `app/Application/Audit/AuditLoggerInterface.php`
 - [ ] `app/Infrastructure/Audit/QueuedAuditLogger.php`
 - [ ] `app/Infrastructure/Audit/NullAuditLogger.php`
-- [ ] Bindings trong `AppServiceProvider`
-- [ ] `config/audit.php` (`enabled`, `retention_days`)
+- [ ] Bindings in `AppServiceProvider`
+- [ ] `config/audit.php` + `.env` vars
 
 ### Phase 3 — Integration
-- [ ] Inject `AuditLoggerInterface` vào `CreateTaskUseCase` + `audit->log()`
-- [ ] Inject vào `UpdateTaskUseCase` + capture `oldValues` trước update
-- [ ] Inject vào `DeleteTaskUseCase` + capture snapshot trước delete
-- [ ] Inject vào `CreateProjectUseCase`, `UpdateProjectUseCase`, `DeleteProjectUseCase`
-- [ ] `app/Http/Listeners/AuthAuditListener.php`
-- [ ] Register listeners trong `EventServiceProvider`
+- [ ] Inject `AuditLoggerInterface` into `CreateTaskUseCase` + call `audit->log()`
+- [ ] Inject into `UpdateTaskUseCase` + capture `oldValues` before update
+- [ ] Inject into `DeleteTaskUseCase` + capture snapshot before delete
+- [ ] Inject into `CreateProjectUseCase`, `UpdateProjectUseCase`, `DeleteProjectUseCase`
+- [ ] `app/Infrastructure/Listeners/AuthAuditListener.php`
+- [ ] Register listeners in `EventServiceProvider`
 
-### Phase 4 — UI Viewer
+### Phase 4 — Viewer
 - [ ] `app/Application/Audit/UseCases/GetAuditLogsUseCase.php`
 - [ ] `app/Http/Controllers/Admin/AuditController.php`
 - [ ] `TenantPolicy::viewAuditLog()` method
-- [ ] Route `/audit` trong `routes/web.php`
+- [ ] Route `/audit` in `routes/web.php`
 - [ ] `resources/views/admin/pages/audit/index.blade.php`
-- [ ] Sidebar link (cho Owner và Admin)
+- [ ] **Add `audit:view` permission to RolePermissionSeeder** (Owner + Admin)
+- [ ] Sidebar link visible to Owner and Admin
 
-### Phase 5 — Testing
-- [ ] `tests/Feature/AuditLogTest.php` — 13+ test cases
-- [ ] Verify `NullAuditLogger` hoạt động đúng trong test context
+### Phase 5 — Tests
+- [ ] `tests/Feature/AuditLogTest.php` — 13 test cases
+- [ ] Verify `NullAuditLogger` works correctly in test context
 - [ ] Test cross-tenant isolation
 
 ---
 
-## Related Documents
+## Deployment Notes
 
-- [00-OVERVIEW.md](./00-OVERVIEW.md) — Problem statement, business value
-- [01-REQUIREMENTS.md](./01-REQUIREMENTS.md) — Functional requirements
-- [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) — Diagrams và file structure
-- [03-APPROACHES.md](./03-APPROACHES.md) — Tại sao chọn Approach D
+1. Run queue worker with `audit` queue before enabling: `php artisan queue:work --queue=audit,default`
+2. Set `AUDIT_ENABLED=true` in production `.env`
+3. Set `AUDIT_ENABLED=false` in `.env.testing` to avoid queue noise in non-audit tests
+4. Monitor `failed_jobs` table — failed audit writes should alert but not block users

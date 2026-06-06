@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
@@ -34,6 +35,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('/user', UserController::class)->middleware('chooseTenant');
 
         Route::get('/audit', [AuditController::class, 'index'])->name('audit.index')->middleware('chooseTenant');
+
+        Route::get('/profile',           [ProfileController::class, 'show'])->name('profile.show');
+        Route::post('/profile',          [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+        Route::post('/tenant/{id}/switch', function (int $id) {
+            session(['current_tenant_id' => $id]);
+            return redirect()->route('dashboard')->with('success', 'Workspace switched.');
+        })->name('tenant.switch');
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');

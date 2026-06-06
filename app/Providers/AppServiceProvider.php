@@ -15,6 +15,20 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use App\Domain\Tenant\Repositories\TenantRepositoryInterface; 
+use App\Infrastructure\Persistence\Repositories\EloquentTenantRepository; 
+use App\Domain\Project\Repositories\ProjectRepositoryInterface; 
+use App\Infrastructure\Persistence\Repositories\EloquentProjectRepository;
+use App\Domain\Task\Repositories\TaskRepositoryInterface; 
+use App\Infrastructure\Persistence\Repositories\EloquentTaskRepository;  
+use App\Services\Contracts\EnglishEgentServiceInterface; 
+use App\Services\Impl\EnglishAgentService; 
+use App\Domain\Audit\Repositories\AuditRepositoryInterface;
+use App\Infrastructure\Persistence\Repositories\EloquentAuditRepository;
+use App\Application\Audit\AuditLoggerInterface;
+use App\Infrastructure\Audit\QueuedAuditLogger;
+use App\Domain\User\Repositories\UserRepositoryInterface;
+use App\Infrastructure\Persistence\Repositories\EloquentUserRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,34 +46,39 @@ class AppServiceProvider extends ServiceProvider
 
         // ── Clean Architecture bindings (new) ─────────────────────────────────
         $this->app->bind(
-            \App\Domain\Tenant\Repositories\TenantRepositoryInterface::class,
-            \App\Infrastructure\Persistence\Repositories\EloquentTenantRepository::class,
+            TenantRepositoryInterface::class,
+            EloquentTenantRepository::class,
         );
 
         $this->app->bind(
-            \App\Domain\Project\Repositories\ProjectRepositoryInterface::class,
-            \App\Infrastructure\Persistence\Repositories\EloquentProjectRepository::class,
+            ProjectRepositoryInterface::class,
+            EloquentProjectRepository::class,
         );
 
         $this->app->bind(
-            \App\Domain\Task\Repositories\TaskRepositoryInterface::class,
-            \App\Infrastructure\Persistence\Repositories\EloquentTaskRepository::class,
+            TaskRepositoryInterface::class,
+            EloquentTaskRepository::class,
         );
 
 
         $this->app->bind(
-            \App\Services\Contracts\EnglishEgentServiceInterface::class,
-            \App\Services\Impl\EnglishAgentService::class,
+            EnglishEgentServiceInterface::class,
+            EnglishAgentService::class,
         );
 
         $this->app->bind(
-            \App\Domain\Audit\Repositories\AuditRepositoryInterface::class,
-            \App\Infrastructure\Persistence\Repositories\EloquentAuditRepository::class,
+            AuditRepositoryInterface::class,
+            EloquentAuditRepository::class,
         );
 
         $this->app->bind(
-            \App\Application\Audit\AuditLoggerInterface::class,
-            \App\Infrastructure\Audit\QueuedAuditLogger::class,
+            AuditLoggerInterface::class,
+            QueuedAuditLogger::class,
+        );
+
+        $this->app->bind(
+            UserRepositoryInterface::class,
+            EloquentUserRepository::class,
         );
 
         Event::listen(Login::class,  [AuthAuditListener::class, 'handleLogin']);

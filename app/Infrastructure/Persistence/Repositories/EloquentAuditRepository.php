@@ -5,17 +5,18 @@ namespace App\Infrastructure\Persistence\Repositories;
 use App\Domain\Audit\Entities\AuditLog;
 use App\Domain\Audit\Repositories\AuditRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Models\AuditLog as AuditLogModel;
 
 class EloquentAuditRepository implements AuditRepositoryInterface
 {
     public function create(AuditLog $entity): void
     {
-        \App\Models\AuditLog::create($this->toArray($entity));
+        AuditLogModel::create($this->toArray($entity));
     }
 
     public function paginateByTenant(int $tenantId, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        return \App\Models\AuditLog::query()
+        return AuditLogModel::query()
             ->where('tenant_id', $tenantId)
             ->when($filters['user_id'] ?? null, fn($q, $v) => $q->where('user_id', $v))
             ->when($filters['action']  ?? null, fn($q, $v) => $q->where('action', $v))
