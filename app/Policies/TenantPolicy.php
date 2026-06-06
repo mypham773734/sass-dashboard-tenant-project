@@ -31,4 +31,9 @@ class TenantPolicy
     {
         return $user->hasPermissionInTenant('tenant:remove_user', $tenant->id);
     }
+
+    public function viewAuditLog(User $user, Tenant $tenant): bool
+    {
+        return $user->isAdminOfTenant($tenant->id);
+    }
 }

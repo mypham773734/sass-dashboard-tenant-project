@@ -2,6 +2,7 @@
 
 namespace App\Application\Task\UseCases;
 
+use App\Application\Audit\AuditLoggerInterface;
 use App\Application\Task\DTOs\UpdateTaskDTO;
 use App\Domain\Task\Entities\TaskEntity;
 use App\Domain\Task\Repositories\TaskRepositoryInterface;
@@ -10,6 +11,7 @@ class UpdateTaskUseCase
 {
     public function __construct(
         private readonly TaskRepositoryInterface $taskRepository,
+        private readonly AuditLoggerInterface    $audit,
     ) {}
 
     public function execute(int $id, int $tenantId, UpdateTaskDTO $dto): TaskEntity
@@ -19,6 +21,12 @@ class UpdateTaskUseCase
         if (! $existing) {
             throw new \DomainException('Task not found.');
         }
+
+        $oldValues = [
+            'title'    => $existing->title,
+            'status'   => $existing->status,
+            'priority' => $existing->priority,
+        ];
 
         // Auto-set completedAt when status transitions to done
         $completedAt = $existing->completedAt;
@@ -43,6 +51,20 @@ class UpdateTaskUseCase
             completedAt: $completedAt,
         );
 
-        return $this->taskRepository->update($updated);
+        $task = $this->taskRepository->update($updated);
+
+        $this->audit->log(
+            action:     'task.updated',
+            entityId:   $task->id,
+            entityType: 'Task',
+            newValues:  [
+                'title'    => $task->title,
+                'status'   => $task->status,
+                'priority' => $task->priority,
+            ],
+            oldValues:  $oldValues,
+        );
+
+        return $task;
     }
 }

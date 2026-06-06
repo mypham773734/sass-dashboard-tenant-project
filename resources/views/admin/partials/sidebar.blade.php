@@ -60,11 +60,20 @@
             <span>Users</span>
         </x-sidebar-link>
 
+        
         <!-- Settings -->
         <x-sidebar-link route="#">
             <i class="fas fa-cog w-5"></i>
             <span>Settings</span>
         </x-sidebar-link>
+        
+        <!-- Audit Log — chỉ owner/admin mới thấy -->
+        @if(auth()->check() && auth()->user()->isAdminOfTenant(session('current_tenant_id') ?? 0))
+        <x-sidebar-link route="audit.index">
+            <i class="fas fa-history w-5 text-amber-500"></i>
+            <span>Audit Log</span>
+        </x-sidebar-link>
+        @endif
     </nav>
 
     <!-- User profile bottom sidebar -->

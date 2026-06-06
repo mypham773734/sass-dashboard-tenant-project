@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
@@ -7,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TaskController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\CheckRoleController;
-use App\Http\Controllers\Admin\UserController; 
+use App\Http\Controllers\Admin\UserController;
 
 
 
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('/task', TaskController::class)->middleware('chooseTenant');
 
         Route::resource('/user', UserController::class)->middleware('chooseTenant');
+
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index')->middleware('chooseTenant');
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');
