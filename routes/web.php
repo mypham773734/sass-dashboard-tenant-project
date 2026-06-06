@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TaskController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\CheckRoleController;
+use App\Http\Controllers\Admin\UserController; 
 
 
 
@@ -24,8 +25,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('/tenant', TenantController::class);
+
         Route::resource('/project', ProjectController::class)->middleware('chooseTenant');
+
         Route::resource('/task', TaskController::class)->middleware('chooseTenant');
+
+        Route::resource('/user', UserController::class)->middleware('chooseTenant');
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');

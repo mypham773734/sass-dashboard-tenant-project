@@ -54,6 +54,12 @@
             <span>Analytics</span>
         </x-sidebar-link>
 
+        <!-- Users -->
+        <x-sidebar-link route="user.index">
+            <i class="fas fa-cog w-5"></i>
+            <span>Users</span>
+        </x-sidebar-link>
+
         <!-- Settings -->
         <x-sidebar-link route="#">
             <i class="fas fa-cog w-5"></i>
