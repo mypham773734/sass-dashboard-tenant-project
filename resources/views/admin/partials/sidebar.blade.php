@@ -56,7 +56,7 @@
 
         <!-- Users -->
         <x-sidebar-link route="user.index">
-            <i class="fas fa-cog w-5"></i>
+            <i class="fa fa-users w-5"></i>
             <span>Users</span>
         </x-sidebar-link>
 
@@ -70,7 +70,7 @@
         <!-- Audit Log — chỉ owner/admin mới thấy -->
         @if(auth()->check() && auth()->user()->isAdminOfTenant(session('current_tenant_id') ?? 0))
         <x-sidebar-link route="audit.index">
-            <i class="fas fa-history w-5 text-amber-500"></i>
+            <i class="fas fa-history w-5"></i>
             <span>Audit Log</span>
         </x-sidebar-link>
         @endif

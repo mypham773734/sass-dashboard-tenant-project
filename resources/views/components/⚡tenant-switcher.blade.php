@@ -4,6 +4,7 @@ use App\Models\Tenant;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
+use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
 
 new class extends Component
 {
@@ -18,7 +19,6 @@ new class extends Component
     #[Computed]
     public function tenants()
     {
-        // TenantScope tự động filter chỉ tenant của user hiện tại
         return Tenant::all();
     }
 
@@ -26,24 +26,17 @@ new class extends Component
     {
         $this->errorMessage = '';
 
-        // Query trực tiếp qua relation để verify ownership + get fresh state
-        /** @var \App\Models\User $user */
-        $user   = Auth::user();
-        $tenant = $user->tenants()->find($tenantId);
+        try {
+            app(ChangeTenantSelectedUseCase::class)->execute(Auth::id(), $tenantId);
 
-        if (! $tenant) {
-            $this->errorMessage = 'Bạn không có quyền truy cập vào workspace này.';
-            return;
+            // Session là HTTP/Presentation concern — set tại đây, không trong Use Case
+            session()->put('current_tenant_id', $tenantId);
+            $this->tenantId = $tenantId;
+
+            $this->redirect('/admin');
+        } catch (\DomainException $e) {
+            $this->errorMessage = $e->getMessage();
         }
-
-        if (! $tenant->is_active) {
-            $this->errorMessage = 'Workspace này hiện không hoạt động.';
-            return;
-        }
-
-        session()->put('current_tenant_id', $tenantId);
-
-        $this->redirect('/admin');
     }
 };
 

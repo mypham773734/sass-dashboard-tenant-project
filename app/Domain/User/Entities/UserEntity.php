@@ -13,4 +13,8 @@ class UserEntity
         public readonly ?string $avatarUrl,
         public readonly array   $tenants,
     ) {}
+
+    public function getPassword(){
+        return $this->password;
+    }
 }

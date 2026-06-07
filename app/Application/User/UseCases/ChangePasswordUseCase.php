@@ -6,6 +6,8 @@ use App\Application\Audit\AuditLoggerInterface;
 use App\Application\User\DTOs\ChangePasswordDTO;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User; 
+use DomainException; 
 
 class ChangePasswordUseCase
 {
@@ -16,10 +18,10 @@ class ChangePasswordUseCase
 
     public function execute(ChangePasswordDTO $dto, int $userId): void
     {
-        $user = \App\Models\User::findOrFail($userId);
+        $user = User::findOrFail($userId);
 
         if (! Hash::check($dto->currentPassword, $user->password)) {
-            throw new \DomainException('Current password is incorrect.');
+            throw new DomainException('Current password is incorrect.');
         }
 
         $this->userRepository->updatePassword($userId, Hash::make($dto->newPassword));

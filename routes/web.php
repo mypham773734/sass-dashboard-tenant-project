@@ -39,10 +39,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/profile',           [ProfileController::class, 'show'])->name('profile.show');
         Route::post('/profile',          [ProfileController::class, 'update'])->name('profile.update');
         Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
-        Route::post('/tenant/{id}/switch', function (int $id) {
-            session(['current_tenant_id' => $id]);
-            return redirect()->route('dashboard')->with('success', 'Workspace switched.');
-        })->name('tenant.switch');
+        
+        Route::post('/tenant/{id}/switch', [TenantController::class, 'switchTenant'])->name('tenant.switch');
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');

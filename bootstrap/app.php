@@ -3,7 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\ChooseCurrentTenant; 
+use App\Http\Middleware\ChooseCurrentTenant;
+use App\Http\Middleware\SetDefaultTenant;
 use Illuminate\Support\LazyCollection;
 use Illuminate\Cache\RateLimiting\Limit; 
 
@@ -20,9 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $middleware->alias([
-            'chooseTenant' => ChooseCurrentTenant::class, 
-        ]); 
-    })
+            'chooseTenant' => ChooseCurrentTenant::class,
+        ]);
+
+        $middleware->appendToGroup('web', SetDefaultTenant::class);
+    })->withEvents(discover: [
+        
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();

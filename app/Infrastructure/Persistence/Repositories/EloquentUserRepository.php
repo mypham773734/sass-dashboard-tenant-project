@@ -37,14 +37,14 @@ class EloquentUserRepository implements UserRepositoryInterface
         ]);
     }
 
-    private function getMeta(int $userId, string $key): ?string
+    public function getMeta(int $userId, string $key): ?string
     {
         return UserMeta::where('user_id', $userId)
             ->where('key', $key)
             ->value('value');
     }
 
-    private function setMeta(int $userId, string $key, ?string $value): void
+    public function setMeta(int $userId, string $key, ?string $value): void
     {
         UserMeta::updateOrCreate(
             ['user_id' => $userId, 'key'   => $key],
