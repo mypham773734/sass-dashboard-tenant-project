@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Role;
-use App\Shared\Tenant\TenantContext; 
 
 class CheckRoleController extends Controller
 {
     public function index()
     {
         // $user = auth()->user();
-        // $tenantId = app(TenantContext::class)->getId();
+        // $tenantId = tenantContext()->getId();
 
         // $role = isset($user->roles) ? $user->roles : [];
 
@@ -27,7 +26,7 @@ class CheckRoleController extends Controller
 
 
         $user = auth()->user();
-        $tenantId = app(TenantContext::class)->getId();
+        $tenantId = tenantContext()->getId();
 
         $roleAdmin = Role::where('tenant_id', $tenantId)->where('name', 'admin')->first();
 

@@ -9,7 +9,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use App\Shared\Tenant\TenantContext; 
 
 class AuditController extends Controller
 {
@@ -20,7 +19,7 @@ class AuditController extends Controller
     public function index(Request $request)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $tenant   = Tenant::findOrFail($tenantId);
 
             $this->authorize('viewAuditLog', $tenant);

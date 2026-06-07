@@ -26,7 +26,7 @@ class ProfileController extends Controller
     {
         try {
             $profile = $this->getProfileUseCase->execute(auth()->id());
-            $tenantId = app(TenantContext::class)->getId(); 
+            $tenantId = tenantContext()->getId(); 
             return view('admin.pages.profile.index', compact('profile', 'tenantId'));
         } catch (\Exception $e) {
             Log::error($e->getMessage());
