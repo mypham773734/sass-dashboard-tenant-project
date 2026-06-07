@@ -29,6 +29,7 @@ use App\Application\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\QueuedAuditLogger;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Persistence\Repositories\EloquentUserRepository;
+use App\Shared\Tenant\TenantContext; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -39,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->singleton(TenantContext::class); 
+
         Gate::policy(Task::class, TaskPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);

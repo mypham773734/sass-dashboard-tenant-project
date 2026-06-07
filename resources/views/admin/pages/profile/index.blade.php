@@ -186,7 +186,7 @@
                             </div>
                             <p class="text-xs text-gray-400 mb-3">{{ $tenant['slug'] }}</p>
 
-                            @if(session('current_tenant_id') == $tenant['id'])
+                            @if($tenantId == $tenant['id'])
                                 <span class="text-xs text-green-600 font-medium">
                                     <i class="fas fa-check-circle"></i> Active workspace
                                 </span>

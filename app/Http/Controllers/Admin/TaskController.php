@@ -14,9 +14,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
+use App\Models\Tenant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Shared\Tenant\TenantContext;
 
 class TaskController extends Controller
 {
@@ -32,12 +34,13 @@ class TaskController extends Controller
     public function index()
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $this->authorize('viewAny', [Task::class, $tenantId]);
 
             $tasks = $this->getTasksUseCase->execute($tenantId);
 
-            return view('admin.pages.task.index', compact('tasks'));
+
+            return view('admin.pages.task.index', compact('tasks', 'tenantId'));
         } catch (AuthorizationException | HttpException $e) {
             throw $e;
         } catch (\Exception $e) {
@@ -49,7 +52,7 @@ class TaskController extends Controller
     public function create()
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $this->authorize('create', [Task::class, $tenantId]);
 
             $projects = $this->getAllProjectsUseCase->execute($tenantId);
@@ -66,7 +69,7 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request)
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $this->authorize('create', [Task::class, $tenantId]);
 
             $dto = CreateTaskDTO::fromArray($request->validated());
@@ -92,7 +95,7 @@ class TaskController extends Controller
     public function edit(int $id)
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $task     = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $task) {
@@ -119,7 +122,7 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, int $id)
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $existing = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $existing) {
@@ -155,7 +158,7 @@ class TaskController extends Controller
     public function destroy(int $id)
     {
         try {
-            $tenantId = session('current_tenant_id');
+            $tenantId = app(TenantContext::class)->getId();
             $task     = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $task) {

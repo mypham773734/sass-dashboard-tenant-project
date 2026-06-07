@@ -52,6 +52,10 @@ class EloquentUserRepository implements UserRepositoryInterface
         );
     }
 
+    public function getUsersByTenant(int $tenantID){
+        // return 
+    }
+
     private function toEntity(User $model): UserEntity
     {
         $avatar  = $this->getMeta($model->id, 'avatar');

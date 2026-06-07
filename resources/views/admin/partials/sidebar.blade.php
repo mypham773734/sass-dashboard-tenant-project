@@ -68,7 +68,11 @@
         </x-sidebar-link>
         
         <!-- Audit Log — chỉ owner/admin mới thấy -->
-        @if(auth()->check() && auth()->user()->isAdminOfTenant(session('current_tenant_id') ?? 0))
+        @php 
+            use App\Shared\Tenant\TenantContext; 
+            $tenantId = app(TenantContext::class)->getId(); 
+        @endphp
+        @if(auth()->check() && auth()->user()->isAdminOfTenant($tenantId ?? 0))
         <x-sidebar-link route="audit.index">
             <i class="fas fa-history w-5"></i>
             <span>Audit Log</span>

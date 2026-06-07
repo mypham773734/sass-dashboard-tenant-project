@@ -5,6 +5,7 @@ use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
+use App\Shared\Tenant\TenantContext; 
 
 new class extends Component
 {
@@ -12,8 +13,8 @@ new class extends Component
     public string $errorMessage = '';
 
     public function mount(): void
-    {
-        $this->tenantId = session('current_tenant_id');
+    { 
+        $this->tenantId = app(TenantContext::class)->getId();
     }
 
     #[Computed]
@@ -30,7 +31,7 @@ new class extends Component
             app(ChangeTenantSelectedUseCase::class)->execute(Auth::id(), $tenantId);
 
             // Session là HTTP/Presentation concern — set tại đây, không trong Use Case
-            session()->put('current_tenant_id', $tenantId);
+            app(TenantContext::class)->setId($tenantId);
             $this->tenantId = $tenantId;
 
             $this->redirect('/admin');

@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use Illuminate\Support\Facades\Log;
+use App\Shared\Tenant\TenantContext; 
 
 class TenantController extends Controller
 {
@@ -98,12 +99,13 @@ class TenantController extends Controller
         }
     }
 
-    public function switchTenant(int $id)
+    public function switchTenant(int $tenantId)
     {
         try {
-            $this->changeTenantSelectedUseCase->execute(auth()->id(), $id);
+            $userId = auth()->id(); 
+            $this->changeTenantSelectedUseCase->execute($userId, $tenantId);
 
-            session(['current_tenant_id' => $id]);
+            app(TenantContext::class)->setId($tenantId);
 
             return redirect()->route('dashboard')->with('success', 'Workspace switched.');
         } catch (\DomainException $e) {
@@ -117,10 +119,13 @@ class TenantController extends Controller
     public function destroy(string $tenantSlug)
     {
         try {
+            $tenantId = app(TenantContext::class)->getId(); 
+            $userId = auth()->id(); 
+
             $this->deleteTenantUseCase->execute(
                 slug:            $tenantSlug,
-                userId:          auth()->id(),
-                currentTenantId: session('current_tenant_id'),
+                userId:          $userId,
+                currentTenantId: $tenantId,
             );
 
             return redirect()
