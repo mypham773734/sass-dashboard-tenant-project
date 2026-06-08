@@ -6,6 +6,7 @@ use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Auth;
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
 use App\Shared\Tenant\TenantContext; 
+use App\Application\Tenant\UseCases\GetAllTenantsUseCase; 
 
 new class extends Component
 {
@@ -20,7 +21,8 @@ new class extends Component
     #[Computed]
     public function tenants()
     {
-        return Tenant::all();
+        $userId = authContext()->getId(); 
+        return app(GetAllTenantsUseCase::class)->execute($userId);
     }
 
     public function switchTenant(int $tenantId): void
@@ -30,7 +32,6 @@ new class extends Component
         try {
             app(ChangeTenantSelectedUseCase::class)->execute(Auth::id(), $tenantId);
 
-            // Session là HTTP/Presentation concern — set tại đây, không trong Use Case
             app(TenantContext::class)->setId($tenantId);
             $this->tenantId = $tenantId;
 

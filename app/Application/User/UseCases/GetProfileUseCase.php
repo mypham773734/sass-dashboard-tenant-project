@@ -5,6 +5,7 @@ namespace App\Application\User\UseCases;
 use App\Domain\User\Entities\UserEntity;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 
+
 class GetProfileUseCase
 {
     public function __construct(
@@ -13,6 +14,7 @@ class GetProfileUseCase
 
     public function execute(int $userId): UserEntity
     {
-        return $this->userRepository->findById($userId);
+        $user = $this->userRepository->findById($userId);
+        return $user; 
     }
 }

@@ -8,7 +8,7 @@ use App\Application\Tenant\UseCases\{
     CreateTenantUseCase, 
     DeleteTenantUseCase, 
     FindTenantBySlugUseCase, 
-    GetTenantsUseCase, 
+    GetPaginatedTenantsUseCase, 
     UpdateTenantUseCase
 }; 
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
@@ -22,7 +22,7 @@ use App\Application\Tenant\DTOs\UpdateTenantDTO;
 class TenantController extends Controller
 {
     public function __construct(
-        private readonly GetTenantsUseCase          $getTenantsUseCase,
+        private readonly GetPaginatedTenantsUseCase          $getPaginatedTenantsUseCase,
         private readonly FindTenantBySlugUseCase    $findTenantBySlugUseCase,
         private readonly CreateTenantUseCase        $createTenantUseCase,
         private readonly UpdateTenantUseCase        $updateTenantUseCase,
@@ -34,7 +34,7 @@ class TenantController extends Controller
     {
         try {
             $userId = authContext()->getId(); 
-            $tenants = $this->getTenantsUseCase->execute($userId);
+            $tenants = $this->getPaginatedTenantsUseCase->execute($userId);
 
             return view('admin.pages.tenant.index', compact('tenants'));
         } catch (\Exception $e) {

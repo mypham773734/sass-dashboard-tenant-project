@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Cache;
 
 class EloquentProjectRepository implements ProjectRepositoryInterface
 {
-    private const TTL_SHORT  = 300;
-    private const TTL_MEDIUM = 600;
+    private const int TTL_SHORT  = 300;
+    private const int TTL_MEDIUM = 600;
 
     public function findAllByTenantId(int $tenantId, int $perPage = 10): LengthAwarePaginator
     {

@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Cache;
 
 class EloquentTenantRepository implements TenantRepositoryInterface
 {
-    private const TTL_SHORT  = 300;
-    private const TTL_MEDIUM = 600;
-    private const TTL_LONG   = 900;
+    private const int TTL_SHORT  = 300;
+    private const int TTL_MEDIUM = 600;
+    private const int TTL_LONG   = 900;
 
-    public function findAllByUserId(int $userId, int $perPage = 10): LengthAwarePaginator
+    public function findPaginatedByUserId(int $userId, int $perPage = 10): LengthAwarePaginator
     {
         $page = request()->input('page', 1);
         $cacheTag = "user:{$userId}:tenants"; 
@@ -42,6 +42,10 @@ class EloquentTenantRepository implements TenantRepositoryInterface
             $cached['current_page'],
             ['path' => request()->url(), 'query' => request()->query()],
         );
+    }
+
+    public function findAllByUserId(int $userIds){
+        return Tenant::whereHas('users', fn ($q) => $q->where('users.id', $userIds))->get(); 
     }
 
     public function findById(int $id): ?TenantEntity

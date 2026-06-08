@@ -70,4 +70,8 @@ class User extends Authenticatable
             ->whereIn('name', ['owner', 'admin'])
             ->isNotEmpty();
     }
+
+    public function isSupperAdmin(){
+        
+    }
 }

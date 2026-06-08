@@ -13,7 +13,9 @@ interface TenantRepositoryInterface
     /**
      * Return a paginated list of tenants that the given user belongs to.
      */
-    public function findAllByUserId(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator;
+    public function findPaginatedByUserId(int $userId, int $perPage = 10): \Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+    public function findAllByUserId(int $userId); 
 
     public function findById(int $id): ?TenantEntity;
 

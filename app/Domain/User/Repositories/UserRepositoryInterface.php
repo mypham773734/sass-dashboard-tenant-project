@@ -13,4 +13,5 @@ interface UserRepositoryInterface
     public function setMeta(int $id, string $key, string $value): void;
 
     public function getMeta(int $id, string $key); 
+    public function getAllSystemUser(int $perPage); 
 }

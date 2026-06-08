@@ -6,9 +6,15 @@ use App\Domain\User\Entities\UserEntity;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 use App\Models\User;
 use App\Models\UserMeta;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Pagination\LengthAwarePaginator; 
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
+    
+    private const int TTL_SHORT  = 300;
+    private const int TTL_MEDIUM = 600;
+
     public function findById(int $id): UserEntity
     {
         $user = User::with('tenants')->findOrFail($id);
@@ -56,10 +62,45 @@ class EloquentUserRepository implements UserRepositoryInterface
         // return 
     }
 
+    public function getAllSystemUser(int $perPage = 10)
+    {
+        $page = request()->input('page', 1);
+        $perPage = request()->input('perPage', $perPage);
+
+        $cacheTag = "user";
+        $cacheKey = "user:page:{$page}:per:{$perPage}";
+
+        $cached = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_MEDIUM, function () use ($perPage) {
+                $paginator = User::orderBy('created_at', 'desc')
+                    ->paginate($perPage);
+                return [
+                    'total' => $paginator->total(),
+                    'per_page' => $paginator->perPage(),
+                    'current_page' => $paginator->currentPage(),
+                    'items' => collect($paginator->items())->map(fn(User $user) => array_merge([
+                        $user->toArray(),
+                    ]))->all(),
+                ];
+            });
+        $items = collect($cached['items'])->map(fn (array $row) => $this->toEntityFromArray($row)); 
+
+        return new LengthAwarePaginator(
+            $items, 
+            $cached['total'], 
+            $cached['per_page'], 
+            $cached['current_page'], 
+            ['path' => request()->url(), 'query' => request()->query()]
+        ); 
+    }
+
     private function toEntity(User $model): UserEntity
     {
+        $tenantId = tenantContext()->getId(); 
         $avatar  = $this->getMeta($model->id, 'avatar');
         $phone   = $this->getMeta($model->id, 'phone');
+        
+        $role = $model->rolesForTenant($tenantId); 
 
         $tenants = $model->tenants->map(fn($t) => [
             'id'   => $t->id,
@@ -76,6 +117,32 @@ class EloquentUserRepository implements UserRepositoryInterface
             avatar:    $avatar,
             avatarUrl: $avatar ? asset('storage/' . $avatar) : null,
             tenants:   $tenants,
+            role: $role
+        );
+    }
+
+    private function toEntityFromArray(array $data){
+        $avatar  = $this->getMeta($data['id'], 'avatar');
+        $phone   = $this->getMeta($data['id'], 'phone');
+        
+        // $role = $model->rolesForTenant($tenantId); 
+
+        // $tenants = $model->tenants->map(fn($t) => [
+        //     'id'   => $t->id,
+        //     'name' => $t->name,
+        //     'slug' => $t->slug,
+        //     'role' => $model->rolesForTenant($t->id)->first()?->name ?? 'member',
+        // ])->toArray();
+
+        return new UserEntity(
+            id:        $data['id'],
+            name:      $model['name'],
+            email:     $model['email'],
+            phone:     $phone,
+            avatar:    $avatar,
+            avatarUrl: $avatar ? asset('storage/' . $avatar) : null,
+            tenants:   [],
+            role: []
         );
     }
 }
