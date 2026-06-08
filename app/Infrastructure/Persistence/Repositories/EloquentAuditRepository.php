@@ -42,7 +42,7 @@ class EloquentAuditRepository implements AuditRepositoryInterface
         ];
     }
 
-    private function toEntity(\App\Models\AuditLog $model): AuditLog
+    private function toEntity($model): AuditLog
     {
         return new AuditLog(
             id:         $model->id,

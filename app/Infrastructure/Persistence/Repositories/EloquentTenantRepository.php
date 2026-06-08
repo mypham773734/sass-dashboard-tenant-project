@@ -17,9 +17,11 @@ class EloquentTenantRepository implements TenantRepositoryInterface
     public function findAllByUserId(int $userId, int $perPage = 10): LengthAwarePaginator
     {
         $page = request()->input('page', 1);
+        $cacheTag = "user:{$userId}:tenants"; 
+        $cacheKey = "user:{$userId}:tenants:page:{$page}:per:{$perPage}"; 
 
-        $cached = Cache::tags(["user:{$userId}:tenants"])
-            ->remember("user:{$userId}:tenants:page:{$page}:per:{$perPage}", self::TTL_SHORT, function () use ($userId, $perPage) {
+        $cached = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_SHORT, function () use ($userId, $perPage) {
                 $paginator = Tenant::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
                     ->whereHas('users', fn ($q) => $q->where('users.id', $userId))
                     ->paginate($perPage);
@@ -43,9 +45,12 @@ class EloquentTenantRepository implements TenantRepositoryInterface
     }
 
     public function findById(int $id): ?TenantEntity
-    {
-        $data = Cache::tags(["tenant:{$id}"])
-            ->remember("tenant:id:{$id}", self::TTL_MEDIUM, function () use ($id) {
+    {  
+        $cacheTag = "tenant:{$id}"; 
+        $cacheKey = "tenant:id:{$id}"; 
+
+        $data = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_MEDIUM, function () use ($id) {
                 return Tenant::withoutGlobalScopes()->find($id)?->toArray();
             });
 
@@ -54,8 +59,11 @@ class EloquentTenantRepository implements TenantRepositoryInterface
 
     public function findBySlug(string $slug): ?TenantEntity
     {
-        $data = Cache::tags(["tenants:slugs"])
-            ->remember("tenant:slug:{$slug}", self::TTL_LONG, function () use ($slug) {
+        $cacheTag = "tenants:slugs"; 
+        $cacheKey = "tenant:slug:{$slug}"; 
+
+        $data = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_LONG, function () use ($slug) {
                 return Tenant::withoutGlobalScopes()
                     ->where('slug', $slug)
                     ->first()?->toArray();
@@ -66,56 +74,66 @@ class EloquentTenantRepository implements TenantRepositoryInterface
 
     public function create(TenantEntity $entity): TenantEntity
     {
+        $cacheTag = "tenants:slugs"; 
         $model = Tenant::create($this->toArray($entity));
 
-        Cache::tags(["tenants:slugs"])->flush();
+        Cache::tags([$cacheTag])->flush();
 
         return $this->toEntityFromArray($model->toArray());
     }
 
     public function update(TenantEntity $entity): TenantEntity
     {
+        $cacheTagId = "tenant:{$entity->id}"; 
+        $cacheTagSlugs = "tenants:slugs"; 
+
         $model = Tenant::withoutGlobalScopes()->findOrFail($entity->id);
         $model->update($this->toArray($entity));
 
-        Cache::tags(["tenant:{$entity->id}", "tenants:slugs"])->flush();
+        Cache::tags([$cacheTagId, $cacheTagSlugs])->flush();
 
         return $this->toEntityFromArray($model->fresh()->toArray());
     }
 
     public function forceDelete(int $id): bool
     {
+        $cacheTagId = "tenant:{$id}"; 
+        $cacheTagSlug = "tenants:slugs"; 
         $result = (bool) Tenant::withoutGlobalScopes()
             ->findOrFail($id)
             ->forceDelete();
 
-        Cache::tags(["tenant:{$id}", "tenants:slugs"])->flush();
+        Cache::tags([$cacheTagId, $cacheTagSlug])->flush();
 
         return $result;
     }
 
     public function attachUser(int $tenantId, int $userId, string $role): void
     {
+        $cacheTag = "user:{$userId}:tenants"; 
         Tenant::withoutGlobalScopes()
             ->findOrFail($tenantId)
             ->users()
             ->attach($userId, ['role' => $role]);
 
-        Cache::tags(["user:{$userId}:tenants"])->flush();
+        Cache::tags([$cacheTag])->flush();
     }
 
     public function detachAllUsers(int $tenantId): void
     {
+        $cacheTag = "tenant:{$tenantId}"; 
+
         $tenant  = Tenant::withoutGlobalScopes()->findOrFail($tenantId);
         $userIds = $tenant->users()->pluck('users.id');
 
         $tenant->users()->detach();
 
         foreach ($userIds as $userId) {
-            Cache::tags(["user:{$userId}:tenants"])->flush();
+            $cacheTagUserId = "user:{$userId}:tenants"; 
+            Cache::tags([$cacheTagUserId])->flush();
         }
 
-        Cache::tags(["tenant:{$tenantId}"])->flush();
+        Cache::tags([$cacheTag])->flush();
     }
 
     public function hasUser(int $tenantId, int $userId): bool

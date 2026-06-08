@@ -17,9 +17,11 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
     public function findAllByTenantId(int $tenantId, int $perPage = 10): LengthAwarePaginator
     {
         $page = request()->input('page', 1);
+        $cacheTag = "tenant:{$tenantId}:projects"; 
+        $cacheKey = "tenant:{$tenantId}:projects:page:{$page}:per:{$perPage}"; 
 
-        $cached = Cache::tags(["tenant:{$tenantId}:projects"])
-            ->remember("tenant:{$tenantId}:projects:page:{$page}:per:{$perPage}", self::TTL_SHORT, function () use ($tenantId, $perPage) {
+        $cached = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_SHORT, function () use ($tenantId, $perPage) {
                 $paginator = Project::where('tenant_id', $tenantId)->paginate($perPage);
                 return [
                     'total'        => $paginator->total(),
@@ -42,8 +44,11 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
 
     public function getAllByTenantId(int $tenantId): Collection
     {
-        $rows = Cache::tags(["tenant:{$tenantId}:projects"])
-            ->remember("tenant:{$tenantId}:projects:all", self::TTL_SHORT, function () use ($tenantId) {
+        $cacheTag = "tenant:{$tenantId}:projects"; 
+        $cacheKey = "tenant:{$tenantId}:projects:all";
+
+        $rows = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_SHORT, function () use ($tenantId) {
                 return Project::where('tenant_id', $tenantId)
                     ->get()
                     ->map(fn (Project $m) => $m->toArray())
@@ -54,9 +59,12 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
     }
 
     public function findById(int $id, int $tenantId): ?ProjectEntity
-    {
-        $data = Cache::tags(["tenant:{$tenantId}:projects"])
-            ->remember("tenant:{$tenantId}:project:{$id}", self::TTL_MEDIUM, function () use ($id, $tenantId) {
+    {  
+        $cacheTag = "tenant:{$tenantId}:projects"; 
+        $cacheKey = "tenant:{$tenantId}:project:{$id}"; 
+
+        $data = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_MEDIUM, function () use ($id, $tenantId) {
                 return Project::where('id', $id)->where('tenant_id', $tenantId)->first()?->toArray();
             });
 
@@ -66,8 +74,9 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
     public function create(ProjectEntity $entity): ProjectEntity
     {
         $model = Project::create($this->toArray($entity));
+        $cacheTag = "tenant:{$entity->tenantId}:projects"; 
 
-        Cache::tags(["tenant:{$entity->tenantId}:projects"])->flush();
+        Cache::tags([$cacheTag])->flush();
 
         return $this->toEntityFromArray($model->toArray());
     }
@@ -80,7 +89,8 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
 
         $model->update($this->toArray($entity));
 
-        Cache::tags(["tenant:{$entity->tenantId}:projects"])->flush();
+        $cacheTag = "tenant:{$entity->tenantId}:projects"; 
+        Cache::tags([$cacheTag])->flush();
 
         return $this->toEntityFromArray($model->fresh()->toArray());
     }
@@ -91,8 +101,9 @@ class EloquentProjectRepository implements ProjectRepositoryInterface
             ->where('tenant_id', $tenantId)
             ->firstOrFail()
             ->delete();
-
-        Cache::tags(["tenant:{$tenantId}:projects"])->flush();
+            
+        $cacheTag = "tenant:{$tenantId}:projects"; 
+        Cache::tags([$cacheTag])->flush();
 
         return $result;
     }

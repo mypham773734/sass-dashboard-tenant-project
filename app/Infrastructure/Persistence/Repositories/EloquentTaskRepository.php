@@ -17,9 +17,10 @@ class EloquentTaskRepository implements TaskRepositoryInterface
     public function findAllByTenantId(int $tenantId, int $perPage = 10): LengthAwarePaginator
     {
         $page = request()->input('page', 1);
-
-        $cached = Cache::tags(["tenant:{$tenantId}:tasks"])
-            ->remember("tenant:{$tenantId}:tasks:page:{$page}:per:{$perPage}", self::TTL_SHORT, function () use ($tenantId, $perPage) {
+        $cacheTag = "tenant:{$tenantId}:tasks"; 
+        $cacheKey = "tenant:{$tenantId}:tasks:page:{$page}:per:{$perPage}"; 
+        $cached = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_SHORT, function () use ($tenantId, $perPage) {
                 $paginator = Task::with(['tenant:id,name', 'project:id,name'])
                     ->where('tenant_id', $tenantId)
                     ->orderBy('created_at', 'desc')
@@ -48,8 +49,11 @@ class EloquentTaskRepository implements TaskRepositoryInterface
 
     public function findById(int $id, int $tenantId): ?TaskEntity
     {
-        $data = Cache::tags(["tenant:{$tenantId}:tasks"])
-            ->remember("tenant:{$tenantId}:task:{$id}", self::TTL_MEDIUM, function () use ($id, $tenantId) {
+        $cacheTag = "tenant:{$tenantId}:tasks"; 
+        $cacheKey = "tenant:{$tenantId}:task:{$id}"; 
+
+        $data = Cache::tags([$cacheTag])
+            ->remember($cacheKey, self::TTL_MEDIUM, function () use ($id, $tenantId) {
                 return Task::where('id', $id)->where('tenant_id', $tenantId)->first()?->toArray();
             });
 
@@ -58,34 +62,38 @@ class EloquentTaskRepository implements TaskRepositoryInterface
 
     public function create(TaskEntity $entity): TaskEntity
     {
-        $model = Task::create($this->toArray($entity));
+        $cacheTag = "tenant:{$entity->tenantId}:tasks"; 
 
-        Cache::tags(["tenant:{$entity->tenantId}:tasks"])->flush();
+        $model = Task::create($this->toArray($entity));
+        Cache::tags([$cacheTag])->flush();
 
         return $this->toEntityFromArray($model->toArray());
     }
 
     public function update(TaskEntity $entity): TaskEntity
     {
+        $cacheTag = "tenant:{$entity->tenantId}:tasks"; 
+
         $model = Task::where('id', $entity->id)
             ->where('tenant_id', $entity->tenantId)
             ->firstOrFail();
 
         $model->update($this->toArray($entity));
 
-        Cache::tags(["tenant:{$entity->tenantId}:tasks"])->flush();
+        Cache::tags([$cacheTag])->flush();
 
         return $this->toEntityFromArray($model->fresh()->toArray());
     }
 
     public function delete(int $id, int $tenantId): bool
     {
+        $cacheTag = "tenant:{$tenantId}:tasks"; 
         $result = (bool) Task::where('id', $id)
             ->where('tenant_id', $tenantId)
             ->firstOrFail()
             ->delete();
 
-        Cache::tags(["tenant:{$tenantId}:tasks"])->flush();
+        Cache::tags([$cacheTag])->flush();
 
         return $result;
     }
