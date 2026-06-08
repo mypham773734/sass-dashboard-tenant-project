@@ -2,8 +2,10 @@
 
 namespace App\Shared\Auth;
 
+use App\Models\User; 
+
 class AuthContext{
-    public function getUser(){
+    public function getUser():User{
         return auth()->user(); 
     }
 
@@ -11,7 +13,7 @@ class AuthContext{
         return auth()->id(); 
     }
 
-    public function checkLogin(){
-        
+    public function checkLogin():bool{
+        return auth()->check(); 
     }
 }

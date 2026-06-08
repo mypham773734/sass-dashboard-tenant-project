@@ -10,8 +10,9 @@ class SetDefaultTenant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && !tenantContext()->has()) {
-            $firstTenant = auth()->user()->tenants()->first();
+        if (authContext()->checkLogin() && !tenantContext()->has()) {
+            $userLogin = authContext()->getUser(); 
+            $firstTenant = $userLogin->tenants()->first();
 
             if ($firstTenant) {
                 $tenantId = $firstTenant->id;

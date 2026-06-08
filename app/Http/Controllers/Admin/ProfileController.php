@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\ChangePasswordRequest;
-use App\Http\Requests\UpdateProfileRequest;
+use Illuminate\Support\Facades\{
+    Log, 
+    Storage
+};
+use App\Http\Requests\Profile\{
+    ChangePasswordRequest, 
+    UpdateProfileRequest
+};
 use App\Application\User\DTOs\{
     ChangePasswordDTO, 
     UpdateProfileDTO

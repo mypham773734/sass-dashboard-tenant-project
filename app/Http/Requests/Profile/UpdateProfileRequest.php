@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Profile;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,9 +14,10 @@ class UpdateProfileRequest extends FormRequest
 
     public function rules(): array
     {
+        $userId = authContext()->getId(); 
         return [
             'name'   => ['required', 'string', 'min:2', 'max:100'],
-            'email'  => ['required', 'email', Rule::unique('users')->ignore(auth()->id())],
+            'email'  => ['required', 'email', Rule::unique('users')->ignore($userId)],
             'phone'  => ['nullable', 'string', 'max:20'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
         ];

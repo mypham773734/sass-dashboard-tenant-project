@@ -4,19 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
+
 use App\Application\Project\DTOs\{
-    CreateProjectDTO, 
-    UpdateProjectDTO, 
+    CreateProjectDTO,
+    UpdateProjectDTO,
 };
+
 use App\Application\Project\UseCases\{
-    CreateProjectUseCase, 
-    DeleteProjectUseCase, 
-    FindProjectByIdUseCase, 
-    GetAllProjectsUseCase, 
+    CreateProjectUseCase,
+    DeleteProjectUseCase,
+    FindProjectByIdUseCase,
+    GetAllProjectsUseCase,
     UpdateProjectUseCase
 };
-use App\Http\Requests\StoreProjectRequest;
-use App\Http\Requests\UpdateProjectRequest;
+
+use App\Http\Requests\Project\{
+    StoreProjectRequest,
+    UpdateProjectRequest
+};
 
 class ProjectController extends Controller
 {
@@ -31,7 +36,7 @@ class ProjectController extends Controller
     public function index()
     {
         try {
-            $tenantId = tenantContext()->getId(); 
+            $tenantId = tenantContext()->getId();
             $projects = $this->getAllProjectsUseCase->execute($tenantId);
 
             return view('admin.pages.project.index', compact('projects'));
@@ -55,12 +60,12 @@ class ProjectController extends Controller
     {
         try {
             $dto = CreateProjectDTO::fromArray($request->validated());
-            $tenantId = tenantContext()->getId(); 
-            $userId = authContext()->getId(); 
+            $tenantId = tenantContext()->getId();
+            $userId = authContext()->getId();
             $this->createProjectUseCase->execute(
-                dto:      $dto,
+                dto: $dto,
                 tenantId: $tenantId,
-                ownerId:  $userId,
+                ownerId: $userId,
             );
 
             return redirect()
@@ -77,7 +82,7 @@ class ProjectController extends Controller
     public function show(int $id)
     {
         try {
-            $tenantId = tenantContext()->getId(); 
+            $tenantId = tenantContext()->getId();
             $project = $this->findProjectByIdUseCase->execute($id, $tenantId);
 
             if (! $project) {
@@ -111,12 +116,12 @@ class ProjectController extends Controller
     public function update(UpdateProjectRequest $request, int $id)
     {
         try {
-            $tenantId = tenantContext()->getId(); 
+            $tenantId = tenantContext()->getId();
             $dto = UpdateProjectDTO::fromArray($request->validated());
             $this->updateProjectUseCase->execute(
-                id:       $id,
+                id: $id,
                 tenantId: $tenantId,
-                dto:      $dto,
+                dto: $dto,
             );
 
             return redirect()
@@ -133,7 +138,7 @@ class ProjectController extends Controller
     public function destroy(int $id)
     {
         try {
-            $tenantId = tenantContext()->getId(); 
+            $tenantId = tenantContext()->getId();
             $this->deleteProjectUseCase->execute($id, $tenantId);
 
             return redirect()

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Tenant;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginRequest extends FormRequest
+class StoreTenantRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,8 +23,17 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'], 
-            'password' => ['required', 'string'], 
+            'name' => [
+                'required', 
+            ], 
+            'slug' => [
+                'required', 
+                'unique:tenants,slug'
+            ], 
+            'trial_ends_at' =>[
+                'required', 
+                'date'
+            ]
         ];
     }
 }

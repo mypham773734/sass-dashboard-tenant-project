@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use App\Application\Tenant\UseCases\{
     CreateTenantUseCase, 
     DeleteTenantUseCase, 
@@ -10,10 +12,10 @@ use App\Application\Tenant\UseCases\{
     UpdateTenantUseCase
 }; 
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTenantRequest;
-use App\Http\Requests\UpdateTenantRequest;
-use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Tenant\{
+    UpdateTenantRequest, 
+    StoreTenantRequest
+};
 use App\DTOs\Tenants\CreateTenantDTO; 
 use App\Application\Tenant\DTOs\UpdateTenantDTO; 
 

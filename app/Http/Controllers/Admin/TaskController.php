@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Http\Controllers\Controller;
 use App\Application\Project\UseCases\GetAllProjectsUseCase;
+
 use App\Application\Task\DTOs\{
     CreateTaskDTO, 
     UpdateTaskDTO
 };
+
 use App\Application\Task\UseCases\{
     CreateTaskUseCase, 
     DeleteTaskUseCase, 
@@ -18,8 +20,11 @@ use App\Application\Task\UseCases\{
     GetTasksUseCase, 
     UpdateTaskUseCase
 };
-use App\Http\Requests\StoreTaskRequest;
-use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Requests\Task\{
+    StoreTaskRequest, 
+    UpdateTaskRequest
+};
+
 use App\Models\Task;
 
 class TaskController extends Controller
