@@ -2,8 +2,8 @@
 
 namespace App\Application\Project\UseCases;
 
-use App\Domain\Project\Repositories\ProjectRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Domain\Project\Repositories\ProjectRepositoryInterface;
 
 class GetProjectsUseCase
 {

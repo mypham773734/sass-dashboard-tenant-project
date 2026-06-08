@@ -9,7 +9,7 @@ class CheckRoleController extends Controller
 {
     public function index()
     {
-        // $user = auth()->user();
+        // $user = authContext()->getUser();
         // $tenantId = tenantContext()->getId();
 
         // $role = isset($user->roles) ? $user->roles : [];
@@ -25,7 +25,7 @@ class CheckRoleController extends Controller
         // Assign role admin for user
 
 
-        $user = auth()->user();
+        $user = authContext()->getUser();
         $tenantId = tenantContext()->getId();
 
         $roleAdmin = Role::where('tenant_id', $tenantId)->where('name', 'admin')->first();
@@ -38,7 +38,7 @@ class CheckRoleController extends Controller
         ]); 
 
 
-        // $user = auth()->user();
+        // $user = authContext()->getUser();
 
         // // Step 1: Spatie có load được roles không?
         // $spatieRoles = $user->roles; // eager load qua relationship

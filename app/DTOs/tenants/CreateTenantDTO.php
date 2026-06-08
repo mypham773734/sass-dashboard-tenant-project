@@ -2,13 +2,15 @@
 
 namespace App\DTOs\Tenants;
 
+use DateTime;
+
 class CreateTenantDTO
 {
     public function __construct(
         public readonly string $name,
         public readonly string $slug,
         public readonly bool $is_active,
-        public readonly string $trial_ends_at,
+        public readonly DateTime $trial_ends_at,
     ) {}
 
     public static function fromArray(array $data): self

@@ -2,8 +2,8 @@
 
 namespace App\Application\Audit\UseCases;
 
-use App\Domain\Audit\Repositories\AuditRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Domain\Audit\Repositories\AuditRepositoryInterface;
 
 class GetAuditLogsUseCase
 {

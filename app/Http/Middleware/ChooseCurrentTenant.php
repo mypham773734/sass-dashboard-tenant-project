@@ -6,7 +6,6 @@ use Closure;
 use ErrorException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Shared\Tenant\TenantContext; 
 
 class ChooseCurrentTenant
 {
@@ -17,7 +16,7 @@ class ChooseCurrentTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $tenantId = app(TenantContext::class)->getId(); 
+        $tenantId = tenantContext()->getId(); 
         if(!$tenantId){   
             abort(403, 'Not Found Current Tenan');
         }

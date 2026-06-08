@@ -2,8 +2,8 @@
 
 namespace App\Domain\Task\Repositories;
 
-use App\Domain\Task\Entities\TaskEntity;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Domain\Task\Entities\TaskEntity;
 
 interface TaskRepositoryInterface
 {

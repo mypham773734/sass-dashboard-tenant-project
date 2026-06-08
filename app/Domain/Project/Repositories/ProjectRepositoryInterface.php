@@ -2,8 +2,8 @@
 
 namespace App\Domain\Project\Repositories;
 
-use App\Domain\Project\Entities\ProjectEntity;
 use Illuminate\Support\Collection;
+use App\Domain\Project\Entities\ProjectEntity;
 
 interface ProjectRepositoryInterface
 {

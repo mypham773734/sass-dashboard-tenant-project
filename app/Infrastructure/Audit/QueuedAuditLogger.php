@@ -4,7 +4,6 @@ namespace App\Infrastructure\Audit;
 
 use App\Application\Audit\AuditLoggerInterface;
 use App\Infrastructure\Queue\Jobs\WriteAuditLogJob;
-use App\Shared\Tenant\TenantContext; 
 
 class QueuedAuditLogger implements AuditLoggerInterface
 {
@@ -20,7 +19,7 @@ class QueuedAuditLogger implements AuditLoggerInterface
             return;
         }
 
-        $tenantId = app(TenantContext::class)->getId(); 
+        $tenantId = tenantContext()->getId(); 
 
         WriteAuditLogJob::dispatch([
             'tenant_id'   => $tenantId,

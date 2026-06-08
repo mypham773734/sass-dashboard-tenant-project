@@ -2,8 +2,8 @@
 
 namespace App\Domain\Audit\Repositories;
 
-use App\Domain\Audit\Entities\AuditLog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Domain\Audit\Entities\AuditLog;
 
 interface AuditRepositoryInterface
 {

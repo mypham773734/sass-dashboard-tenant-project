@@ -2,23 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Application\Project\UseCases\GetAllProjectsUseCase;
-use App\Application\Task\DTOs\CreateTaskDTO;
-use App\Application\Task\DTOs\UpdateTaskDTO;
-use App\Application\Task\UseCases\CreateTaskUseCase;
-use App\Application\Task\UseCases\DeleteTaskUseCase;
-use App\Application\Task\UseCases\FindTaskByIdUseCase;
-use App\Application\Task\UseCases\GetTasksUseCase;
-use App\Application\Task\UseCases\UpdateTaskUseCase;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTaskRequest;
-use App\Http\Requests\UpdateTaskRequest;
-use App\Models\Task;
-use App\Models\Tenant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use App\Shared\Tenant\TenantContext;
+use App\Http\Controllers\Controller;
+use App\Application\Project\UseCases\GetAllProjectsUseCase;
+use App\Application\Task\DTOs\{
+    CreateTaskDTO, 
+    UpdateTaskDTO
+};
+use App\Application\Task\UseCases\{
+    CreateTaskUseCase, 
+    DeleteTaskUseCase, 
+    FindTaskByIdUseCase, 
+    GetTasksUseCase, 
+    UpdateTaskUseCase
+};
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
+use App\Models\Task;
 
 class TaskController extends Controller
 {
@@ -34,7 +36,7 @@ class TaskController extends Controller
     public function index()
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $this->authorize('viewAny', [Task::class, $tenantId]);
 
             $tasks = $this->getTasksUseCase->execute($tenantId);
@@ -52,7 +54,7 @@ class TaskController extends Controller
     public function create()
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $this->authorize('create', [Task::class, $tenantId]);
 
             $projects = $this->getAllProjectsUseCase->execute($tenantId);
@@ -69,14 +71,15 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
+            $userId = authContext()->getId(); 
             $this->authorize('create', [Task::class, $tenantId]);
 
             $dto = CreateTaskDTO::fromArray($request->validated());
             $this->createTaskUseCase->execute(
                 dto:       $dto,
                 tenantId:  $tenantId,
-                createdBy: auth()->id(),
+                createdBy: $userId,
             );
 
             return redirect()
@@ -95,7 +98,7 @@ class TaskController extends Controller
     public function edit(int $id)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $task     = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $task) {
@@ -122,7 +125,7 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, int $id)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $existing = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $existing) {
@@ -158,7 +161,7 @@ class TaskController extends Controller
     public function destroy(int $id)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId();
+            $tenantId = tenantContext()->getId();
             $task     = $this->findTaskByIdUseCase->execute($id, $tenantId);
 
             if (! $task) {

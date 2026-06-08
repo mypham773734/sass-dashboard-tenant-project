@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Application\Audit\UseCases\GetAuditLogsUseCase;
-use App\Http\Controllers\Controller;
-use App\Models\Tenant;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Application\Audit\UseCases\GetAuditLogsUseCase;
+use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 
 class AuditController extends Controller
 {

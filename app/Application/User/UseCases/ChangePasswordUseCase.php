@@ -2,12 +2,12 @@
 
 namespace App\Application\User\UseCases;
 
+use DomainException; 
+use Illuminate\Support\Facades\Hash;
 use App\Application\Audit\AuditLoggerInterface;
 use App\Application\User\DTOs\ChangePasswordDTO;
 use App\Domain\User\Repositories\UserRepositoryInterface;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User; 
-use DomainException; 
 
 class ChangePasswordUseCase
 {

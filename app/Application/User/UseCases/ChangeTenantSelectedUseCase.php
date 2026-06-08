@@ -19,13 +19,13 @@ class ChangeTenantSelectedUseCase
     {
         $user = $this->userRepository->findById($userId);
 
-        // Kiểm tra user có thuộc tenant này không
+        // Check user belong to tenant
         $belongsToTenant = collect($user->tenants)->contains('id', $tenantId);
         if (! $belongsToTenant) {
             throw new \DomainException('Bạn không có quyền truy cập vào workspace này.');
         }
 
-        // Kiểm tra tenant có đang active không
+        // Check tenant active
         $tenant = $this->tenantRepository->findById($tenantId);
         if (! $tenant || ! $tenant->isActive) {
             throw new \DomainException('Workspace này hiện không hoạt động.');

@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Application\Tenant\UseCases\CreateTenantUseCase;
-use App\Application\Tenant\UseCases\DeleteTenantUseCase;
-use App\Application\Tenant\UseCases\FindTenantBySlugUseCase;
-use App\Application\Tenant\UseCases\GetTenantsUseCase;
-use App\Application\Tenant\UseCases\UpdateTenantUseCase;
+use App\Application\Tenant\UseCases\{
+    CreateTenantUseCase, 
+    DeleteTenantUseCase, 
+    FindTenantBySlugUseCase, 
+    GetTenantsUseCase, 
+    UpdateTenantUseCase
+}; 
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use Illuminate\Support\Facades\Log;
-use App\Shared\Tenant\TenantContext; 
 use App\DTOs\Tenants\CreateTenantDTO; 
+use App\Application\Tenant\DTOs\UpdateTenantDTO; 
 
 class TenantController extends Controller
 {
@@ -29,7 +31,8 @@ class TenantController extends Controller
     public function index()
     {
         try {
-            $tenants = $this->getTenantsUseCase->execute(auth()->id());
+            $userId = authContext()->getId(); 
+            $tenants = $this->getTenantsUseCase->execute($userId);
 
             return view('admin.pages.tenant.index', compact('tenants'));
         } catch (\Exception $e) {
@@ -52,7 +55,8 @@ class TenantController extends Controller
     {
         try {
             $dto = CreateTenantDTO::fromArray($request->validated());
-            $this->createTenantUseCase->execute($dto, auth()->id());
+            $userId = authContext()->getId(); 
+            $this->createTenantUseCase->execute($dto, $userId);
 
             return redirect()
                 ->route('tenant.index')
@@ -68,7 +72,8 @@ class TenantController extends Controller
     public function edit(string $tenantSlug)
     {
         try {
-            $tenant = $this->findTenantBySlugUseCase->execute($tenantSlug, auth()->id());
+            $userId = authContext()->getId(); 
+            $tenant = $this->findTenantBySlugUseCase->execute($tenantSlug, $userId);
 
             if (! $tenant) {
                 abort(404);
@@ -101,10 +106,10 @@ class TenantController extends Controller
     public function switchTenant(int $tenantId)
     {
         try {
-            $userId = auth()->id(); 
+            $userId = authContext()->getId(); 
             $this->changeTenantSelectedUseCase->execute($userId, $tenantId);
 
-            app(TenantContext::class)->setId($tenantId);
+            tenantContext()->setId($tenantId);
 
             return redirect()->route('dashboard')->with('success', 'Workspace switched.');
         } catch (\DomainException $e) {
@@ -118,8 +123,8 @@ class TenantController extends Controller
     public function destroy(string $tenantSlug)
     {
         try {
-            $tenantId = app(TenantContext::class)->getId(); 
-            $userId = auth()->id(); 
+            $tenantId = tenantContext()->getId(); 
+            $userId = authContext()->getId(); 
 
             $this->deleteTenantUseCase->execute(
                 slug:            $tenantSlug,

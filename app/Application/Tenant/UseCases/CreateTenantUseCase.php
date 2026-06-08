@@ -24,9 +24,8 @@ class CreateTenantUseCase
             id:          null,
             name:        $dto->name,
             slug:        $dto->slug,
-            isActive:    $dto->isActive,
-            trialEndsAt: $dto->trialEndsAt,
-            settings:    $dto->settings,
+            isActive:    $dto->is_active,
+            trialEndsAt: $dto->trial_ends_at,
         );
 
         $created = $this->tenantRepository->create($entity);
