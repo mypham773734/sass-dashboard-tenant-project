@@ -1,6 +1,6 @@
 <?php 
 
-namespace App\DTOs\projects; 
+namespace App\DTOs\Projects; 
 
 class CreateProjectDTO{
     public function __construct(

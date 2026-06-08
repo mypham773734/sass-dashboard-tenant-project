@@ -2,8 +2,6 @@
 
 namespace App\DTOs\Tenants;
 
-use DateTime;
-
 class CreateTenantDTO
 {
     public function __construct(

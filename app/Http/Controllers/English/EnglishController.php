@@ -4,8 +4,7 @@ namespace App\Http\Controllers\English;
 
 use App\Http\Controllers\Controller;
 use App\Ai\Agents\EnglishEgent;
-use App\Services\Impl\EnglishAgentService;
-use App\DTOs\englishs\PromptGenerateMessageDTO;
+use App\DTOs\Englishs\PromptGenerateMessageDTO; 
 use App\Services\Contracts\EnglishEgentServiceInterface;
 use Illuminate\Http\Request;
 

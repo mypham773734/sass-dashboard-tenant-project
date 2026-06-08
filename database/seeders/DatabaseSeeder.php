@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Database\Seeders\RolePermissionSeeder; 
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,11 +19,11 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $user = User::factory()->create([
-            'name' => 'ngocmy02',
-            'email' => 'test2@example.com',
-            'password' => 'ngocmy01'
-        ]);
+        // $user = User::factory()->create([
+        //     'name' => 'ngocmy02',
+        //     'email' => 'test2@example.com',
+        //     'password' => 'ngocmy01'
+        // ]);
 
         // Tenant::create([
         //     'name' => 'FlowSaaS Demo',
@@ -40,6 +41,7 @@ class DatabaseSeeder extends Seeder
         //     'settings' => json_encode(['theme' => 'dark', 'currency' => 'EUR']),
         // ]);
 
+        // Run Permission Seeder Data
         $this->call(RolePermissionSeeder::class);
     }
 }

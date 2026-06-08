@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Application\Tenant\DTOs\CreateTenantDTO;
-use App\Application\Tenant\DTOs\UpdateTenantDTO;
 use App\Application\Tenant\UseCases\CreateTenantUseCase;
 use App\Application\Tenant\UseCases\DeleteTenantUseCase;
 use App\Application\Tenant\UseCases\FindTenantBySlugUseCase;
@@ -15,6 +13,7 @@ use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use Illuminate\Support\Facades\Log;
 use App\Shared\Tenant\TenantContext; 
+use App\DTOs\Tenants\CreateTenantDTO; 
 
 class TenantController extends Controller
 {

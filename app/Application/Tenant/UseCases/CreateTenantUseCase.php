@@ -2,9 +2,9 @@
 
 namespace App\Application\Tenant\UseCases;
 
-use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Domain\Tenant\Entities\TenantEntity;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
+use App\DTOs\Tenants\CreateTenantDTO; 
 
 /**
  * Orchestrates tenant creation:

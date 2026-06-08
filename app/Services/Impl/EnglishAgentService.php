@@ -4,7 +4,7 @@ namespace App\Services\Impl;
 
 use App\Services\Contracts\EnglishEgentServiceInterface; 
 use App\Ai\Agents\EnglishEgent; 
-use App\DTOs\englishs\PromptGenerateMessageDTO; 
+use App\DTOs\Englishs\PromptGenerateMessageDTO; 
 
 class EnglishAgentService implements EnglishEgentServiceInterface{
     public function generateMessage(EnglishEgent $englishEgent, PromptGenerateMessageDTO $promptGenerateMessageDTO){

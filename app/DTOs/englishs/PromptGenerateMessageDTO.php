@@ -1,6 +1,6 @@
 <?php 
 
-namespace App\DTOs\englishs; 
+namespace App\DTOs\Englishs; 
 
 class PromptGenerateMessageDTO{
     public function __construct(

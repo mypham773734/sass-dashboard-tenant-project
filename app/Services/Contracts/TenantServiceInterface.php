@@ -2,7 +2,7 @@
 
 namespace App\Services\Contracts; 
 
-use App\DTOs\Tenants\CreateTenantDTO;
+use App\DTOs\Tenants\CreateTenantDTO; 
 
 use App\Models\Tenant; 
 
