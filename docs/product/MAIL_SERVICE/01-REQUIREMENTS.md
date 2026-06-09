@@ -64,12 +64,12 @@ return [
 
 Each handler implements EmailHandlerInterface:
 
-\\\php
+```php
 interface EmailHandlerInterface {
-    public function handle(string \, array \): EmailDTO;
-    public function shouldRun(string \): bool;
+    public function handle(int $tenantId, array $context): EmailDTO;
+    public function shouldRun(string $schedule): bool;
 }
-\\\
+```
 
 Handler responsibilities:
 - Build email content
@@ -81,9 +81,9 @@ Handler responsibilities:
 
 ## MailService API
 
-\\\php
+```php
 // On-demand send
-MailService::dispatch('user_invitation', \, [
+MailService::dispatch('user_invitation', $tenantId, [
     'email' => 'newuser@example.com',
 ]);
 
@@ -91,8 +91,8 @@ MailService::dispatch('user_invitation', \, [
 MailService::dispatchScheduled();  // run by command
 
 // Direct send (immediate)
-MailService::send('type', \, \);
-\\\
+MailService::send('user_invitation', $tenantId, $context);
+```
 
 ---
 

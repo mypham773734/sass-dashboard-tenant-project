@@ -3,64 +3,73 @@
 **Status:** Planning  
 **Last Updated:** 2026-06-06
 
-## System Overview
+## System Overview & Layer Mapping
 
-\\\
-Application Code
+```
+Presentation (Http/Controllers)
     ↓
-MailService Facade (send, dispatch, dispatchScheduled)
+Application Layer (No Laravel)
+    ├── EmailHandlerInterface (contract)
+    └── EmailDTO (data transfer)
     ↓
-  ┌─────────────────────────────────┐
-  │ Pluggable Handlers              │
-  │ - AuditDigestHandler            │
-  │ - UserInvitationHandler         │
-  │ - TenantNotificationHandler     │
-  └─────────────────────────────────┘
-    ↓
-SendEmailJob (async queue)
-    ↓
-Mailable Classes (render templates)
+Infrastructure Layer (Laravel-specific)
+    ├── MailService (orchestrator)
+    ├── Handlers (AuditDigest, UserInvitation, TenantNotification)
+    │   • Read: EloquentAuditRepository, Models
+    │   • Return: EmailDTO
+    ├── SendEmailJob (queue)
+    │   • Calls handler
+    │   • Renders Mailable
+    │   • Sends via Mail facade
+    │   • Logs to audit_logs
+    ├── Mailable classes (render templates)
+    └── SendScheduledEmailsCommand
+        • Loads config
+        • Loops enabled types + tenants
+        • Dispatches jobs
     ↓
 Laravel Mail facade
     ↓
-SMTP / Sendmail / Other
+SMTP / Sendmail / Other providers
+```
 
-Scheduled Command
-    ↓
-Check schedules in config
-    ↓
-Dispatch jobs for enabled types
-\\\
+**Clean Architecture Compliance:**
+- Domain layer: None needed (pure config-driven)
+- Application layer: Interfaces & DTOs only (no Laravel)
+- Infrastructure layer: All implementations (handlers, jobs, command)
+- Presentation layer: Controllers call `MailService::dispatch()`
 
 ## Core Classes
 
-### EmailHandlerInterface
-\\\php
+### EmailHandlerInterface (Application Layer)
+```php
 interface EmailHandlerInterface {
-    public function handle(string \, array \): EmailDTO;
-    public function shouldRun(string \): bool;
+    public function handle(int $tenantId, array $context): EmailDTO;
+    public function shouldRun(string $schedule): bool;
 }
-\\\
+```
 
-### EmailDTO
-\\\php
+### EmailDTO (Application Layer)
+```php
 class EmailDTO {
-    public string \;
-    public string \;
-    public array \;  // emails
-    public string \;
-    public array \;
+    public function __construct(
+        public readonly string $type,
+        public readonly string $subject,
+        public readonly array $recipients,
+        public readonly string $template,
+        public readonly array $data = [],
+    ) {}
 }
-\\\
+```
 
-### MailService
-\\\php
+### MailService (Infrastructure Layer)
+```php
 class MailService {
-    public function send(string \, string \, array \): void
-    public function dispatch(string \, string \, array \): void
-    public function dispatchScheduled(): void
+    public function send(string $type, int $tenantId, array $context): void;
+    public function dispatch(string $type, int $tenantId, array $context): void;
+    public function dispatchScheduled(): void;
 }
-\\\
+```
 
 ### SendEmailJob
 - Receives: type, tenantId, context

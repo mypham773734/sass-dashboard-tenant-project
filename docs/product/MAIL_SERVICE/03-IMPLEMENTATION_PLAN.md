@@ -1,7 +1,7 @@
-﻿# Mail Service — Implementation Plan
+# Mail Service — Implementation Plan
 
 **Status:** Planning  
-**Last Updated:** 2026-06-06
+**Last Updated:** 2026-06-09
 **Estimated Duration:** 12-18 hours
 
 ---
@@ -14,38 +14,39 @@ NO database migrations needed! Everything in config file.
 
 ## Phases
 
-### Phase 1: Core Infrastructure (3h)
+### Phase 1: Refactor Docs (1-2h)
+- Fix PHP code snippets (replace broken `\` placeholders)
+- Update layer placement (Application vs Infrastructure)
+- Add clean architecture diagram
+- Mark AUDIT_EMAIL as "Future Enhancement"
+
+### Phase 2: Core Infrastructure (2-3h)
 - Create config/mail-service.php
 - Create EmailHandlerInterface
 - Create EmailDTO
 - Create MailService
 - Bind in ServiceProvider
 
-### Phase 2: Handlers (4h)
+### Phase 3: Handlers (2-3h)
 - AuditDigestHandler
 - UserInvitationHandler
 - TenantNotificationHandler
 - Register handlers
 
-### Phase 3: Queue & Mailable (3h)
+### Phase 4: Queue & Mailable (2h)
 - SendEmailJob
 - 3 Mailable classes
 - 3 email templates
 
-### Phase 4: Commands (2h)
+### Phase 5: Commands (1h)
 - SendScheduledEmailsCommand
 - Schedule parsing
 - Register in console.php
 
-### Phase 5: Integration (2h)
+### Phase 6: Integration (1h)
 - Audit logging
 - ServiceContainer setup
 - Usage examples
-
-### Phase 6: Testing (4h)
-- Unit tests
-- Job tests
-- Integration tests
 
 **Total: 12-18 hours**
 
@@ -55,22 +56,22 @@ NO database migrations needed! Everything in config file.
 
 | # | Task | Est. | Phase |
 |---|------|------|-------|
-| 1 | Create config file | 30m | 1 |
-| 2 | Create interfaces & DTOs | 30m | 1 |
-| 3 | Create MailService | 60m | 1 |
-| 4 | ServiceProvider bindings | 15m | 1 |
-| 5 | Create 3 handlers | 120m | 2 |
-| 6 | Create SendEmailJob | 30m | 3 |
-| 7 | Create 3 Mailable classes | 60m | 3 |
-| 8 | Create 3 email templates | 60m | 3 |
-| 9 | Create scheduled command | 60m | 4 |
-| 10 | Schedule parsing logic | 60m | 4 |
-| 11 | Audit logging integration | 30m | 5 |
-| 12 | ServiceContainer setup | 30m | 5 |
-| 13 | Documentation & examples | 30m | 5 |
-| 14 | Unit tests | 120m | 6 |
-| 15 | Job/Queue tests | 60m | 6 |
-| 16 | Integration tests | 60m | 6 |
+| 1 | Refactor MAIL_SERVICE docs | 60m | 1 |
+| 2 | Update AUDIT_EMAIL status | 15m | 1 |
+| 3 | Create config file | 30m | 2 |
+| 4 | Create interfaces & DTOs (Application) | 30m | 2 |
+| 5 | Create MailService (Infrastructure) | 60m | 2 |
+| 6 | ServiceProvider bindings | 15m | 2 |
+| 7 | Create 3 handlers | 120m | 3 |
+| 8 | Create SendEmailJob | 30m | 4 |
+| 9 | Create 3 Mailable classes | 60m | 4 |
+| 10 | Create 3 email templates | 60m | 4 |
+| 11 | Create scheduled command | 60m | 5 |
+| 12 | Schedule parsing logic | 30m | 5 |
+| 13 | Register command in console.php | 15m | 5 |
+| 14 | Audit logging integration | 30m | 6 |
+| 15 | ServiceContainer setup | 15m | 6 |
+| 16 | Documentation & examples | 15m | 6 |
 
 ---
 
@@ -79,17 +80,19 @@ NO database migrations needed! Everything in config file.
 ### Config
 - config/mail-service.php
 
-### Infrastructure
+### Application Layer
+- app/Application/Mail/Contracts/EmailHandlerInterface.php
+- app/Application/Mail/DTOs/EmailDTO.php
+
+### Infrastructure Layer
 - app/Infrastructure/Mail/MailService.php
-- app/Infrastructure/Mail/Handlers/EmailHandlerInterface.php
 - app/Infrastructure/Mail/Handlers/AuditDigestHandler.php
 - app/Infrastructure/Mail/Handlers/UserInvitationHandler.php
 - app/Infrastructure/Mail/Handlers/TenantNotificationHandler.php
-- app/Infrastructure/Mail/DTOs/EmailDTO.php
 - app/Infrastructure/Mail/Jobs/SendEmailJob.php
-- app/Infrastructure/Mail/Mail/AuditDigestMailable.php
-- app/Infrastructure/Mail/Mail/UserInvitationMailable.php
-- app/Infrastructure/Mail/Mail/TenantNotificationMailable.php
+- app/Infrastructure/Mail/Mailables/AuditDigestMailable.php
+- app/Infrastructure/Mail/Mailables/UserInvitationMailable.php
+- app/Infrastructure/Mail/Mailables/TenantNotificationMailable.php
 - app/Infrastructure/Mail/Commands/SendScheduledEmailsCommand.php
 
 ### Templates
@@ -97,17 +100,14 @@ NO database migrations needed! Everything in config file.
 - resources/views/emails/user-invitation.blade.php
 - resources/views/emails/tenant-notification.blade.php
 
-### Tests
+### Tests (Optional)
 - tests/Unit/Mail/MailServiceTest.php
-- tests/Unit/Mail/AuditDigestHandlerTest.php
-- tests/Unit/Mail/UserInvitationHandlerTest.php
-- tests/Unit/Mail/TenantNotificationHandlerTest.php
+- tests/Unit/Mail/Handlers/*Test.php
 - tests/Feature/Mail/SendEmailJobTest.php
 - tests/Feature/Mail/SendScheduledEmailsCommandTest.php
-- tests/Integration/Mail/MailServiceIntegrationTest.php
 
 ### Modifications
-- app/Providers/AppServiceProvider.php (register handlers)
+- app/Providers/AppServiceProvider.php (register MailService)
 - routes/console.php (schedule command)
 
 ---
@@ -117,7 +117,7 @@ NO database migrations needed! Everything in config file.
 Example: Add "Weekly Report" email
 
 ### Step 1: Update config
-\\\php
+```php
 // config/mail-service.php
 'weekly_report' => [
     'enabled' => true,
@@ -125,33 +125,36 @@ Example: Add "Weekly Report" email
     'template' => 'emails.weekly-report',
     'handler' => WeeklyReportHandler::class,
 ],
-\\\
+```
 
 ### Step 2: Create handler
-\\\php
+```php
 class WeeklyReportHandler implements EmailHandlerInterface {
-    public function handle(string \, array \): EmailDTO { }
-    public function shouldRun(string \): bool { }
+    public function handle(int $tenantId, array $context): EmailDTO { }
+    public function shouldRun(string $schedule): bool { }
 }
-\\\
+```
 
 ### Step 3: Create mailable & template
-\\\php
+```php
 class WeeklyReportMailable extends Mailable { }
-\\\
+```
 
 ### Step 4: Register in provider
-\\\php
-\->register('weekly_report', new WeeklyReportHandler(...));
-\\\
+```php
+$this->app->bind(
+    'mail_handlers.weekly_report',
+    new WeeklyReportHandler(...)
+);
+```
 
 Done! No other changes needed.
 
 ---
 
-## Config File
+## Config File Structure
 
-\\\php
+```php
 // config/mail-service.php
 return [
     'enabled' => env('MAIL_SERVICE_ENABLED', true),
@@ -179,42 +182,42 @@ return [
         ],
     ],
 ];
-\\\
+```
 
 ---
 
 ## Usage Examples
 
 ### On-Demand Send
-\\\php
-MailService::dispatch('user_invitation', \, [
+```php
+MailService::dispatch('user_invitation', $tenantId, [
     'email' => 'newuser@example.com',
     'sender_name' => auth()->user()->name,
 ]);
-\\\
+```
 
 ### Scheduled Send
-\\\ash
+```bash
 # Add to crontab
 0 0 * * * php /app/artisan mail:send-scheduled
-\\\
+```
 
 ### Direct Send
-\\\php
-MailService::send('tenant_notification', \, [
+```php
+MailService::send('tenant_notification', $tenantId, [
     'title' => 'Important Update',
 ]);
-\\\
+```
 
 ---
 
 ## Success Criteria
 
 - ✓ Config-based (no DB tables)
-- ✓ Pluggable handlers
-- ✓ Scheduled + on-demand
-- ✓ All tests pass
-- ✓ Audit logged
-- ✓ Email templates work in all clients
-- ✓ Performance < 500ms per handler
-
+- ✓ Pluggable handlers (EmailHandlerInterface)
+- ✓ Scheduled + on-demand sends
+- ✓ All tests pass (unit, feature, integration)
+- ✓ Audit logged (write to audit_logs)
+- ✓ Email templates render correctly
+- ✓ Multi-tenant isolation enforced
+- ✓ Clean architecture compliance (layers respected)

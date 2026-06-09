@@ -1,18 +1,31 @@
-# Daily Audit Email Reports
+# Audit Email System â€” Future Enhancement
 
-**Status:** Planning
-**Last Updated:** 2026-06-06
-**Estimated effort:** 18-26 hours
+**Status:** Planning â€” Blocked by MAIL_SERVICE  
+**Last Updated:** 2026-06-09
+**Estimated Effort:** 18-26 hours
+**Scope:** Database-backed, per-tenant email configuration UI (Phase 2)
 
 ---
 
-## Feature Overview
+## Overview
+
+Per-tenant daily email digests of audit logs with database-backed configuration.
+
+**NOT in MVP scope.** This is a Phase 2 enhancement to MAIL_SERVICE.
+
+**Current Phase:** Implement MAIL_SERVICE (`docs/product/MAIL_SERVICE/`) first â€” config-only, no UI.
+
+Once MAIL_SERVICE is stable, add AUDIT_EMAIL â€” per-tenant config stored in database.
+
+---
+
+## Features (When Implemented)
 
 Enables tenants to receive daily email digests of audit logs with:
-- Configurable recipients and event filters
-- Automatic daily scheduling
+- Configurable recipients and event filters (stored in `audit_email_configs` table)
+- Automatic daily scheduling per tenant
 - Manual send on-demand
-- Report history and replay capability
+- Report history and replay capability (stored in `audit_email_reports` table)
 - Full integration with existing Audit System
 
 ---
@@ -94,8 +107,8 @@ app/Http/
 
 resources/
 +-- views/admin/pages/audit/
-¦   +-- email-config.blade.php
-¦   +-- reports/ (index.blade.php, show.blade.php)
+ï¿½   +-- email-config.blade.php
+ï¿½   +-- reports/ (index.blade.php, show.blade.php)
 +-- views/emails/audit-report.blade.php
 +-- views/components/ (reusable UI components)
 
@@ -123,20 +136,20 @@ tests/
 
 ## Next Steps
 
-1. Review [01-REQUIREMENTS.md](./01-REQUIREMENTS.md) — clarify Q1-Q6 with stakeholders
-2. Validate [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) — confirm design decisions
-3. Estimate [03-IMPLEMENTATION_PLAN.md](./03-IMPLEMENTATION_PLAN.md) — team capacity planning
-4. Begin Phase 1 — create migrations and domain layer
+1. Review [01-REQUIREMENTS.md](./01-REQUIREMENTS.md) ï¿½ clarify Q1-Q6 with stakeholders
+2. Validate [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) ï¿½ confirm design decisions
+3. Estimate [03-IMPLEMENTATION_PLAN.md](./03-IMPLEMENTATION_PLAN.md) ï¿½ team capacity planning
+4. Begin Phase 1 ï¿½ create migrations and domain layer
 
 ---
 
 ## Integration Points
 
 **Existing systems this feature uses:**
-- Audit System (pp/Domain/Audit) — queries audit_logs
-- AuditLogger (App\Application\Audit\AuditLoggerInterface) — logs config changes and sends
-- Permission RBAC — only admins can configure
-- Mail facade — sends via configured mailer
+- Audit System (pp/Domain/Audit) ï¿½ queries audit_logs
+- AuditLogger (App\Application\Audit\AuditLoggerInterface) ï¿½ logs config changes and sends
+- Permission RBAC ï¿½ only admins can configure
+- Mail facade ï¿½ sends via configured mailer
 
-**No breaking changes** to existing code — this is additive.
+**No breaking changes** to existing code ï¿½ this is additive.
 
