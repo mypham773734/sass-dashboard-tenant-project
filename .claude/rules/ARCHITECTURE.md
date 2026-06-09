@@ -2,7 +2,7 @@
 
 **Reference:** Use when building new features or unsure about layer placement.
 
-See [00-START-HERE.md](./00-START-HERE.md) for quick overview.
+See [00-start-here.md](././00-start-here.md) for quick overview.
 
 ---
 
@@ -321,4 +321,4 @@ Response to user (redirect/view)
 
 ---
 
-See [PATTERNS.md](./PATTERNS.md) for detailed code patterns.
+See [patterns.md](././patterns.md) for detailed code patterns.

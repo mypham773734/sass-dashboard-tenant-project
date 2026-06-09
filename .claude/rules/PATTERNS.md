@@ -446,4 +446,4 @@ Response
 
 ---
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for layer structure.
+See [architecture.md](././architecture.md) for layer structure.

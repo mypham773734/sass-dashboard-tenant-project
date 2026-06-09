@@ -176,4 +176,4 @@ git push --force origin feature/my-feature
 
 ---
 
-See [COMMANDS.md](./COMMANDS.md) for git-related commands.
+See [commands.md](././commands.md) for git-related commands.

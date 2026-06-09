@@ -1,6 +1,6 @@
 # Start Here: Project Overview
 
-**New dev?** Read this first (5 min). Then refer to [INDEX.md](./INDEX.md) for detailed rules.
+**New dev?** Read this first (5 min). Then refer to [index.md](././index.md) for detailed rules.
 
 ---
 
@@ -215,16 +215,16 @@ php artisan migrate:refresh --seed
 php artisan tinker
 ```
 
-See [COMMANDS.md](./COMMANDS.md) for full list.
+See [commands.md](././commands.md) for full list.
 
 ---
 
 ## 📖 Next Steps
 
-1. **Read**: [ARCHITECTURE.md](./ARCHITECTURE.md) — Understand layers
-2. **Refer**: [PATTERNS.md](./PATTERNS.md) — Code patterns
-3. **Use**: [COMMANDS.md](./COMMANDS.md) — Dev workflow
-4. **Remember**: [GIT-SAFETY.md](./GIT-SAFETY.md) — No auto-commits!
+1. **Read**: [architecture.md](././architecture.md) — Understand layers
+2. **Refer**: [patterns.md](././patterns.md) — Code patterns
+3. **Use**: [commands.md](././commands.md) — Dev workflow
+4. **Remember**: [git-safety.md](././git-safety.md) — No auto-commits!
 
 ---
 
@@ -240,14 +240,14 @@ A: Only in Repository implementations (`app/Infrastructure/Persistence/Repositor
 A: Throw `\DomainException` in UseCase for business rules. Controller catches and returns to user.
 
 **Q: How do I know if I'm following the architecture?**
-A: Ask: "Does this class depend on something it shouldn't?" Check [ARCHITECTURE.md](./ARCHITECTURE.md) layer rules.
+A: Ask: "Does this class depend on something it shouldn't?" Check [architecture.md](././architecture.md) layer rules.
 
 **Q: Can I query the database directly in a controller?**
 A: No. Always use repository interface.
 
 **Q: When should I commit my changes?**
-A: Only when user explicitly says "commit". Never auto-commit. See [GIT-SAFETY.md](./GIT-SAFETY.md).
+A: Only when user explicitly says "commit". Never auto-commit. See [git-safety.md](././git-safety.md).
 
 ---
 
-**Ready to code?** → See [ARCHITECTURE.md](./ARCHITECTURE.md) for feature structure or [PATTERNS.md](./PATTERNS.md) for code examples.
+**Ready to code?** → See [architecture.md](././architecture.md) for feature structure or [patterns.md](././patterns.md) for code examples.

@@ -4,42 +4,46 @@
 
 ## 🚀 For First Time Reading (5 min)
 
-1. Read: **[00-START-HERE.md](./00-START-HERE.md)** — Overview, key patterns, do's & don'ts
-2. Refer: **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Layer rules when creating features
-3. Command: **[COMMANDS.md](./COMMANDS.md)** — Dev commands (copy-paste)
+1. Read: **[00-start-here.md](././00-start-here.md)** — Overview, key patterns, do's & don'ts
+2. Refer: **[architecture.md](././architecture.md)** — Layer rules when creating features
+3. Command: **[commands.md](././commands.md)** — Dev commands (copy-paste)
 
 ## 📚 Detailed Rules
 
 | File | Purpose | Read When |
 |------|---------|-----------|
-| **[00-START-HERE.md](./00-START-HERE.md)** | Project overview, key rules, common mistakes | First time, confused |
-| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Clean Architecture layers, dependencies, examples | Building new feature |
-| **[PATTERNS.md](./PATTERNS.md)** | Code patterns (Controllers, DTOs, UseCases, Repositories) | Implementing code |
-| **[COMMANDS.md](./COMMANDS.md)** | All dev commands (setup, test, debug) | Working on project |
-| **[GIT-SAFETY.md](./GIT-SAFETY.md)** | Git rules (⚠️ NO auto-commit) | Before committing |
+| **[00-start-here.md](././00-start-here.md)** | Project overview, key rules, common mistakes | First time, confused |
+| **[architecture.md](././architecture.md)** | Clean Architecture layers, dependencies, examples | Building new feature |
+| **[patterns.md](././patterns.md)** | Code patterns (Controllers, DTOs, UseCases, Repositories) | Implementing code |
+| **[commands.md](././commands.md)** | All dev commands (setup, test, debug) | Working on project |
+| **[git-safety.md](././git-safety.md)** | Git rules (⚠️ NO auto-commit) | Before committing |
+| **[naming-conventions.md](././naming-conventions.md)** | File naming rules (lowercase for docs) | Creating/renaming files |
 
 ## 🎯 Quick Answers
 
 **"How do I add a new feature?"**
-→ See [ARCHITECTURE.md](./ARCHITECTURE.md) checklist
+→ See [architecture.md](././architecture.md) checklist
 
 **"What's the project structure?"**
-→ See [00-START-HERE.md](./00-START-HERE.md) section "📂 Project Structure"
+→ See [00-start-here.md](././00-start-here.md) section "📂 Project Structure"
 
 **"How do I run tests?"**
-→ See [COMMANDS.md](./COMMANDS.md) section "Testing"
+→ See [commands.md](././commands.md) section "Testing"
 
 **"When can I commit code?"**
-→ See [GIT-SAFETY.md](./GIT-SAFETY.md) — Ask user first!
+→ See [git-safety.md](././git-safety.md) — Ask user first!
 
 **"What's the difference between Domain/Application/Infrastructure?"**
-→ See [ARCHITECTURE.md](./ARCHITECTURE.md) section "Layer Rules"
+→ See [architecture.md](././architecture.md) section "Layer Rules"
 
 **"How do I handle exceptions in controllers?"**
-→ See [PATTERNS.md](./PATTERNS.md) section "Controllers"
+→ See [patterns.md](././patterns.md) section "Controllers"
 
 **"What's a DTO and when do I use it?"**
-→ See [PATTERNS.md](./PATTERNS.md) section "DTOs"
+→ See [patterns.md](././patterns.md) section "DTOs"
+
+**"How should I name documentation files?"**
+→ See [naming-conventions.md](././naming-conventions.md) — Use lowercase!
 
 ---
 
@@ -47,13 +51,14 @@
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| 00-START-HERE.md | ~150 | Quick overview |
-| ARCHITECTURE.md | ~200 | Layer structure & rules |
-| PATTERNS.md | ~300 | Code patterns |
-| COMMANDS.md | ~150 | Dev commands |
-| GIT-SAFETY.md | ~80 | Git safety rules |
+| 00-start-here.md | ~250 | Quick overview |
+| architecture.md | ~320 | Layer structure & rules |
+| patterns.md | ~450 | Code patterns |
+| commands.md | ~200 | Dev commands |
+| git-safety.md | ~180 | Git safety rules |
+| naming-conventions.md | ~120 | Naming conventions |
 
-**Total:** ~880 lines (easily scannable)
+**Total:** ~1,500 lines (easily scannable)
 
 ---
 

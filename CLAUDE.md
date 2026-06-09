@@ -2,22 +2,23 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Start here:** `.claude/rules/INDEX.md` — Quick guide to all rules.
+**Start here:** `.claude/rules/index.md` — Quick guide to all rules.
 
 ---
 
 ## 📚 Rules Structure
 
-All project rules are in `.claude/rules/`:
+All project rules are in `.claude/rules/` (all lowercase):
 
 | File | Purpose | Read When |
 |------|---------|-----------|
-| **[INDEX.md](.claude/rules/INDEX.md)** | Rules guide | First time, confused |
-| **[00-START-HERE.md](.claude/rules/00-START-HERE.md)** | Project overview (5 min read) | Getting started |
-| **[ARCHITECTURE.md](.claude/rules/ARCHITECTURE.md)** | Layer structure & new features | Building features |
-| **[PATTERNS.md](.claude/rules/PATTERNS.md)** | Code patterns (copy-paste) | Implementing code |
-| **[COMMANDS.md](.claude/rules/COMMANDS.md)** | Dev commands (cheat sheet) | During development |
-| **[GIT-SAFETY.md](.claude/rules/GIT-SAFETY.md)** | ⚠️ Git safety rules | Before committing |
+| **[index.md](.claude/rules/index.md)** | Rules guide | First time, confused |
+| **[00-start-here.md](.claude/rules/00-start-here.md)** | Project overview (5 min read) | Getting started |
+| **[architecture.md](.claude/rules/architecture.md)** | Layer structure & new features | Building features |
+| **[patterns.md](.claude/rules/patterns.md)** | Code patterns (copy-paste) | Implementing code |
+| **[commands.md](.claude/rules/commands.md)** | Dev commands (cheat sheet) | During development |
+| **[git-safety.md](.claude/rules/git-safety.md)** | ⚠️ Git safety rules | Before committing |
+| **[naming-conventions.md](.claude/rules/naming-conventions.md)** | File naming conventions | Creating/renaming files |
 
 ---
 

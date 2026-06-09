@@ -196,4 +196,4 @@ git diff --staged
 
 ---
 
-See [00-START-HERE.md](./00-START-HERE.md) for project overview.
+See [00-start-here.md](././00-start-here.md) for project overview.
