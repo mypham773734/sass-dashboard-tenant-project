@@ -92,7 +92,8 @@ class TenantController extends Controller
     {
         try {
             $dto = UpdateTenantDTO::fromArray($request->validated());
-            $this->updateTenantUseCase->execute($tenantSlug, $dto);
+            $userName = authContext()->getUser()->name; 
+            $this->updateTenantUseCase->execute($tenantSlug, $dto, $userName);
 
             return redirect()
                 ->route('tenant.index')
@@ -132,6 +133,7 @@ class TenantController extends Controller
                 slug:            $tenantSlug,
                 userId:          $userId,
                 currentTenantId: $tenantId,
+                actorName:       authContext()->getUser()->name,
             );
 
             return redirect()

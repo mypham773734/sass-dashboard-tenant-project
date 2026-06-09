@@ -3,10 +3,11 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Console\Commands\SendScheduledEmailsCommand;
 use App\Http\Middleware\ChooseCurrentTenant;
 use App\Http\Middleware\SetDefaultTenant;
 use Illuminate\Support\LazyCollection;
-use Illuminate\Cache\RateLimiting\Limit; 
+use Illuminate\Cache\RateLimiting\Limit;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })->withEvents(discover: [
         
     ])
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
+        $schedule->command(SendScheduledEmailsCommand::class)->everyMinute();
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })

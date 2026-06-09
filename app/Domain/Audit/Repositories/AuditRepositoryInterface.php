@@ -10,4 +10,7 @@ interface AuditRepositoryInterface
     public function create(AuditLog $auditLog): void;
 
     public function paginateByTenant(int $tenantId, array $filters = [], int $perPage = 20): LengthAwarePaginator;
+
+    /** @return AuditLog[] */
+    public function getRecentByTenant(int $tenantId, \Carbon\Carbon $since, int $limit = 50): array;
 }

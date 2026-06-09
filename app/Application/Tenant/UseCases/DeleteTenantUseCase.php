@@ -2,20 +2,17 @@
 
 namespace App\Application\Tenant\UseCases;
 
+use App\Application\Mail\Contracts\MailServiceInterface;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 
-/**
- * Deletes a tenant after verifying two business rules:
- * 1. The requesting user must belong to the tenant.
- * 2. You cannot delete the tenant you are currently using.
- */
 class DeleteTenantUseCase
 {
     public function __construct(
         private readonly TenantRepositoryInterface $tenantRepository,
+        private readonly MailServiceInterface      $mailService,
     ) {}
 
-    public function execute(string $slug, int $userId, ?int $currentTenantId): bool
+    public function execute(string $slug, int $userId, ?int $currentTenantId, string $actorName): bool
     {
         $tenant = $this->tenantRepository->findBySlug($slug);
 
@@ -32,6 +29,15 @@ class DeleteTenantUseCase
         if ($currentTenantId !== null && $currentTenantId === $tenant->id) {
             throw new \DomainException('Cannot delete the tenant that is currently selected.');
         }
+
+        // Notify admins before detaching users (while recipients can still be resolved).
+        $this->mailService->dispatch('tenant_notification', $tenant->id, [
+            'tenant_name' => $tenant->name,
+            'event_title' => 'Workspace deleted',
+            'event_type'  => 'security',
+            'description' => "Workspace \"{$tenant->name}\" was permanently deleted by {$actorName}.",
+            'actor_name'  => $actorName,
+        ]);
 
         $this->tenantRepository->detachAllUsers($tenant->id);
 

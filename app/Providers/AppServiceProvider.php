@@ -29,8 +29,10 @@ use App\Application\Audit\AuditLoggerInterface;
 use App\Infrastructure\Audit\QueuedAuditLogger;
 use App\Domain\User\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Persistence\Repositories\EloquentUserRepository;
-use App\Shared\Tenant\TenantContext; 
-use App\Shared\Auth\AuthContext; 
+use App\Application\Mail\Contracts\MailServiceInterface;
+use App\Infrastructure\Mail\MailService;
+use App\Shared\Tenant\TenantContext;
+use App\Shared\Auth\AuthContext;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -84,6 +86,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             UserRepositoryInterface::class,
             EloquentUserRepository::class,
+        );
+
+        $this->app->bind(
+            MailServiceInterface::class,
+            MailService::class,
         );
 
         Event::listen(Login::class,  [AuthAuditListener::class, 'handleLogin']);

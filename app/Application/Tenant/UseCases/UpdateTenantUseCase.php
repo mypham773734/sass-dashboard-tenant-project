@@ -2,6 +2,7 @@
 
 namespace App\Application\Tenant\UseCases;
 
+use App\Application\Mail\Contracts\MailServiceInterface;
 use App\Application\Tenant\DTOs\UpdateTenantDTO;
 use App\Domain\Tenant\Entities\TenantEntity;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
@@ -10,9 +11,10 @@ class UpdateTenantUseCase
 {
     public function __construct(
         private readonly TenantRepositoryInterface $tenantRepository,
+        private readonly MailServiceInterface      $mailService,
     ) {}
 
-    public function execute(string $slug, UpdateTenantDTO $dto): TenantEntity
+    public function execute(string $slug, UpdateTenantDTO $dto, string $actorName): TenantEntity
     {
         $existing = $this->tenantRepository->findBySlug($slug);
 
@@ -20,7 +22,6 @@ class UpdateTenantUseCase
             throw new \DomainException("Tenant with slug [{$slug}] not found.");
         }
 
-        // Build an updated entity — id and slug stay the same.
         $updated = new TenantEntity(
             id:          $existing->id,
             name:        $dto->name,
@@ -30,6 +31,16 @@ class UpdateTenantUseCase
             settings:    $dto->settings ?? $existing->settings,
         );
 
-        return $this->tenantRepository->update($updated);
+        $result = $this->tenantRepository->update($updated);
+
+        $this->mailService->dispatch('tenant_notification', $result->id, [
+            'tenant_name' => $result->name,
+            'event_title' => 'Workspace settings updated',
+            'event_type'  => 'settings_changed',
+            'description' => "Workspace settings for \"{$result->name}\" were updated by {$actorName}.",
+            'actor_name'  => $actorName,
+        ]);
+
+        return $result;
     }
 }

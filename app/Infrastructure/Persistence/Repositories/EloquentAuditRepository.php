@@ -26,6 +26,18 @@ class EloquentAuditRepository implements AuditRepositoryInterface
             ->paginate($perPage);
     }
 
+    public function getRecentByTenant(int $tenantId, \Carbon\Carbon $since, int $limit = 50): array
+    {
+        return AuditLogModel::query()
+            ->where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $since)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->map(fn($m) => $this->toEntity($m))
+            ->toArray();
+    }
+
     private function toArray(AuditLog $entity): array
     {
         return [
