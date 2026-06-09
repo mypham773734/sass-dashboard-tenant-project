@@ -1,130 +1,152 @@
-# Project Rules for Claude Code
+# CLAUDE.md
 
-## Architecture: Clean Architecture + Multi-Tenant SaaS
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### Layer Structure
+**Start here:** `.claude/rules/INDEX.md` — Quick guide to all rules.
+
+---
+
+## 📚 Rules Structure
+
+All project rules are in `.claude/rules/`:
+
+| File | Purpose | Read When |
+|------|---------|-----------|
+| **[INDEX.md](.claude/rules/INDEX.md)** | Rules guide | First time, confused |
+| **[00-START-HERE.md](.claude/rules/00-START-HERE.md)** | Project overview (5 min read) | Getting started |
+| **[ARCHITECTURE.md](.claude/rules/ARCHITECTURE.md)** | Layer structure & new features | Building features |
+| **[PATTERNS.md](.claude/rules/PATTERNS.md)** | Code patterns (copy-paste) | Implementing code |
+| **[COMMANDS.md](.claude/rules/COMMANDS.md)** | Dev commands (cheat sheet) | During development |
+| **[GIT-SAFETY.md](.claude/rules/GIT-SAFETY.md)** | ⚠️ Git safety rules | Before committing |
+
+---
+
+## ⚡ 30-Second Summary
+
+**What:** Laravel 13 multi-tenant SaaS with Clean Architecture
+
+**Architecture:**
+- Single database, many tenants (tenant_id scoping)
+- 4 layers: Domain → Application → Infrastructure → Http
+- DTOs in camelCase, database in snake_case
+- Repository interfaces (never direct Eloquent in UseCase)
+- Try-catch in every controller (DomainException vs Exception)
+
+**Critical Rules:**
+- ❌ **NEVER auto-commit or push** (ask user first)
+- ❌ Never read session inside UseCase
+- ❌ Never use Eloquent outside Infrastructure layer
+- ❌ Never call Eloquent models directly in UseCase
+
+See [00-START-HERE.md](.claude/rules/00-START-HERE.md) for full overview.
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Setup
+composer run setup
+
+# Dev
+composer run dev
+
+# Test
+composer run test
+
+# Format
+./vendor/bin/pint --fix
+```
+
+See [COMMANDS.md](.claude/rules/COMMANDS.md) for all commands.
+
+---
+
+## 🏗️ Building a Feature
+
+1. **Domain:** Entity + RepositoryInterface
+2. **Application:** DTO + UseCase
+3. **Infrastructure:** Repository implementation (Eloquent)
+4. **Http:** Controller
+5. **Binding:** Register in AppServiceProvider
+
+See [ARCHITECTURE.md](.claude/rules/ARCHITECTURE.md) for checklist.
+
+---
+
+## ⚠️ Critical Rules
+
+### No Auto-Commit/Push
+```bash
+❌ WRONG: Commit without asking
+✅ RIGHT: Ask "Should I commit this?"
+```
+
+### No Eloquent in UseCase
+```php
+❌ $project = Project::find($id);
+✅ $project = $this->repository->findById($id);
+```
+
+### No Session in UseCase
+```php
+❌ $tenantId = session('current_tenant_id');
+✅ public function execute(DTO $dto, int $tenantId)
+```
+
+### Always Try-Catch Controllers
+```php
+✅ try { ... } catch (DomainException) { ... } catch (Exception) { ... }
+```
+
+See [GIT-SAFETY.md](.claude/rules/GIT-SAFETY.md) for all safety rules.
+
+---
+
+## 📂 Project Structure
 
 ```
 app/
-├── Domain/           # Pure PHP — NO Laravel dependencies
-│   └── {Feature}/
-│       ├── Entities/         # Business object, business rules
-│       └── Repositories/     # Interface only (contract)
-├── Application/      # Orchestration — USE CASES + DTOs
-│   └── {Feature}/
-│       ├── DTOs/
-│       └── UseCases/         # One file = one use case, one execute() method
-├── Infrastructure/   # Laravel-specific code
-│   └── Persistence/Repositories/  # Eloquent implementations
-├── Models/           # Eloquent models — only used in Infrastructure layer
-└── Http/             # Presentation layer
-    ├── Controllers/
-    └── Requests/
-```
+├── Domain/               # Pure business logic
+├── Application/          # DTOs + UseCases
+├── Infrastructure/       # Repository implementations
+├── Models/              # Eloquent models
+├── Http/                # Controllers, routes
+└── Providers/           # Service bindings
 
-### Layer Rules
-
-| Layer | Can depend on | Cannot depend on |
-|-------|--------------|-----------------|
-| Domain | Nothing (pure PHP) | Laravel, Eloquent, Application |
-| Application | Domain | Laravel, Eloquent, Infrastructure |
-| Infrastructure | Domain, Application, Laravel | — |
-| Presentation (Http) | Application, Domain | Infrastructure directly |
-
-### Bindings
-
-Every Repository Interface must be bound in `AppServiceProvider`:
-```php
-$this->app->bind(
-    \App\Domain\{Feature}\Repositories\{Feature}RepositoryInterface::class,
-    \App\Infrastructure\Persistence\Repositories\Eloquent{Feature}Repository::class,
-);
+.claude/rules/           # All rules (this folder)
 ```
 
 ---
 
-## Multi-Tenant Rules
+## 💡 Common Questions
 
-- Every feature belongs to a Tenant — always think about Tenant isolation first
-- Tenant context comes from `session('current_tenant_id')`
-- All queries scoped to tenant must include `.where('tenant_id', $tenantId)`
-- Cross-tenant data access is forbidden — never query without tenant scope
-- Pass `tenantId` explicitly from Controller to Use Case — never resolve session inside a Use Case
+**Q: Where do I put business logic?**  
+A: Use Cases (`app/Application/{Feature}/UseCases/`)
 
----
+**Q: Where do I query the database?**  
+A: Repository implementation (`app/Infrastructure/Persistence/Repositories/`)
 
-## Controller Rules
+**Q: When do I commit?**  
+A: Only when user explicitly says "commit". See [GIT-SAFETY.md](.claude/rules/GIT-SAFETY.md)
 
-### Try-Catch: EVERY method must be wrapped — no exceptions
+**Q: What's a DTO?**  
+A: Data Transfer Object with camelCase properties. See [PATTERNS.md](.claude/rules/PATTERNS.md)
 
-```php
-// Read operations (index, show, edit, create)
-public function index()
-{
-    try {
-        $data = $this->someUseCase->execute(...);
-        return view('...', compact('data'));
-    } catch (\Exception $e) {
-        Log::error($e->getMessage());
-        return back()->with('error', 'Failed to load page.');
-    }
-}
-
-// Write operations (store, update, destroy)
-public function store(StoreRequest $request)
-{
-    try {
-        $dto = SomeDTO::fromArray($request->validated());
-        $this->createUseCase->execute($dto, ...);
-        return redirect()->route('...')->with('success', '...');
-    } catch (\DomainException $e) {
-        return back()->with('error', $e->getMessage())->withInput();
-    } catch (\Exception $e) {
-        Log::error($e->getMessage());
-        return back()->with('error', 'Something went wrong.')->withInput();
-    }
-}
-```
-
-- Read methods: catch `\Exception`, log it, return `back()->with('error', ...)`
-- Write methods: catch `\DomainException` first (business rule violations), then `\Exception`
-- Always `use Illuminate\Support\Facades\Log`
-- Controllers are thin — no business logic, only orchestrate Use Cases
+**Q: How do I handle errors?**  
+A: Throw DomainException in UseCase, catch in controller. See [PATTERNS.md](.claude/rules/PATTERNS.md)
 
 ---
 
-## DTO Rules
+## 📖 Resources
 
-- Namespace: `App\Application\{Feature}\DTOs\`
-- Properties use **camelCase** (PHP convention), not snake_case (DB convention)
-- Always provide a `fromArray(array $data): self` static factory
-- `fromArray()` handles the snake_case → camelCase mapping
-
----
-
-## Use Case Rules
-
-- One Use Case = one operation = one `execute()` method
-- Inject Repository Interface (never Eloquent model directly)
-- Throw `\DomainException` for business rule violations
-- Never access `session()`, `auth()`, or HTTP concerns — receive context as parameters
+- **Full rules:** `.claude/rules/` folder
+- **Project docs:** `docs/product/` folder
+- **README:** Project overview, API docs
+- **Laravel:** https://laravel.com/docs/13.x
 
 ---
 
-## Eloquent Repository Rules
+**Last Updated:** 2026-06-09
 
-- Only place in the entire codebase allowed to touch Eloquent models
-- Must implement the Domain Repository Interface
-- Always provide `toEntity(Model $model): Entity` and `toArray(Entity $entity): array` private helpers
-- `toEntity()` maps DB snake_case columns → Entity camelCase properties
-
----
-
-## Answer Conventions (how Claude should respond)
-
-1. Explain the approach before writing code
-2. If multiple approaches exist, compare pros and cons
-3. Show directory structure when creating new files
-4. Flag architectural mistakes and suggest corrections
-5. Write clean, comment-free code (unless the WHY is non-obvious)
-6. Act as mentor — teach the pattern, don't just solve the immediate problem
+**Next:** Read [.claude/rules/INDEX.md](.claude/rules/INDEX.md) or [.claude/rules/00-START-HERE.md](.claude/rules/00-START-HERE.md)
