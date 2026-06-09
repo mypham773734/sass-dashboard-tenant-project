@@ -1,132 +1,180 @@
-﻿# Mail Service — Requirements
+# Mail Service — Requirements
 
-**Status:** Planning  
-**Last Updated:** 2026-06-06
+**Status:** Draft  
+**Last Updated:** 2026-06-09
 
 ---
 
 ## Email Types (MVP)
 
-### 1. Audit Digest (Scheduled daily)
-- **What:** Daily email digest of audit logs
-- **Schedule:** Configurable time (UTC) - default midnight
-- **Recipients:** From config/mail-service.php
-- **Handler:** AuditDigestHandler
+### 1. User Invitation (On-demand)
 
-### 2. User Invitation (On-demand)
-- **What:** Email inviting user to join tenant
-- **When:** Immediately when admin invites
-- **Recipients:** Invited email address
-- **Handler:** UserInvitationHandler
+| Field | Value |
+|---|---|
+| Trigger | Admin mời user vào tenant |
+| Khi nào | Ngay lập tức khi `InviteUserUseCase` chạy |
+| Recipients | Email address của người được mời |
+| Handler | `UserInvitationHandler` |
+| Context cần | `invited_email`, `invited_by`, `tenant_name`, `accept_url` |
 
-### 3. Tenant Notification (On-demand)
-- **What:** Notify admins of important events
-- **When:** Immediately or scheduled
-- **Recipients:** Configured in config
-- **Handler:** TenantNotificationHandler
+### 2. Tenant Notification (On-demand)
 
----
+| Field | Value |
+|---|---|
+| Trigger | Sự kiện quan trọng trong tenant (user bị xóa, role thay đổi...) |
+| Khi nào | Ngay lập tức |
+| Recipients | Owner + Admin của tenant (resolve từ DB lúc runtime) |
+| Handler | `TenantNotificationHandler` |
+| Context cần | `event_type`, `description`, `actor_name` |
 
-## Key Design: Config-First
+### 3. Audit Digest (Scheduled)
 
-All configuration in config/mail-service.php:
+| Field | Value |
+|---|---|
+| Trigger | Cron job hàng ngày |
+| Schedule | Configurable qua env (`AUDIT_DIGEST_SCHEDULE=daily_08_00`) |
+| Recipients | Owner + Admin của **từng** tenant (resolve từ DB lúc runtime) |
+| Handler | `AuditDigestHandler` |
+| Context cần | `date`, `tenant_id` (handler tự query `audit_logs`) |
 
-\\\php
-return [
-    'enabled' => true,
-    'queue' => 'default',
-    
-    'email_types' => [
-        'audit_digest' => [
-            'enabled' => true,
-            'schedule' => 'daily_00_00',
-            'template' => 'emails.audit-digest',
-            'handler' => AuditDigestHandler::class,
-            'recipients' => ['admin@company.com'],
-        ],
-        'user_invitation' => [
-            'enabled' => true,
-            'template' => 'emails.user-invitation',
-            'handler' => UserInvitationHandler::class,
-        ],
-        'tenant_notification' => [
-            'enabled' => true,
-            'template' => 'emails.tenant-notification',
-            'handler' => TenantNotificationHandler::class,
-        ],
-    ],
-];
-\\\
+> **Lưu ý multi-tenant:** Recipients không hardcode trong config — Handler có trách nhiệm tự resolve danh sách email của owner/admin thuộc về `$tenantId` từ DB.
 
 ---
 
-## Handler Interface
+## MailServiceInterface API
 
-Each handler implements EmailHandlerInterface:
+Use Cases inject interface này — không biết concrete implementation:
 
 ```php
-interface EmailHandlerInterface {
-    public function handle(int $tenantId, array $context): EmailDTO;
-    public function shouldRun(string $schedule): bool;
+interface MailServiceInterface
+{
+    // Gửi async qua queue (khuyến khích dùng)
+    public function dispatch(string $type, int $tenantId, array $context = []): void;
+
+    // Gửi sync (immediate, dùng khi cần chắc chắn gửi xong trước khi tiếp tục)
+    public function send(string $type, int $tenantId, array $context = []): void;
+
+    // Gọi bởi scheduled command — dispatch tất cả email types có schedule
+    public function dispatchScheduled(Carbon $now): void;
 }
 ```
 
-Handler responsibilities:
-- Build email content
-- Query data (audit logs, users, etc.)
-- Determine recipients
-- Return EmailDTO
+---
+
+## EmailHandlerInterface
+
+Mỗi email type có 1 Handler:
+
+```php
+interface EmailHandlerInterface
+{
+    // Nhận tenantId + context → trả về EmailDTO chứa subject, recipients, template data
+    public function handle(int $tenantId, array $context): EmailDTO;
+
+    // Kiểm tra có nên chạy tại thời điểm $now không (dùng cho scheduled emails)
+    public function shouldSend(string $schedule, Carbon $now): bool;
+}
+```
 
 ---
 
-## MailService API
+## EmailDTO
 
 ```php
-// On-demand send
-MailService::dispatch('user_invitation', $tenantId, [
-    'email' => 'newuser@example.com',
-]);
+class EmailDTO
+{
+    public function __construct(
+        public readonly string $type,
+        public readonly string $subject,
+        public readonly array  $recipients,   // ['email@example.com', ...]
+        public readonly string $template,     // 'emails.user-invitation'
+        public readonly array  $data = [],    // passed to Blade template
+    ) {}
+}
+```
 
-// Scheduled send
-MailService::dispatchScheduled();  // run by command
+---
 
-// Direct send (immediate)
-MailService::send('user_invitation', $tenantId, $context);
+## Config Structure
+
+```php
+// config/mail-service.php
+return [
+    'enabled' => env('MAIL_SERVICE_ENABLED', true),
+    'queue'   => env('MAIL_SERVICE_QUEUE', 'mail'),
+
+    'email_types' => [
+
+        'user_invitation' => [
+            'enabled'  => env('USER_INVITATION_ENABLED', true),
+            'handler'  => \App\Infrastructure\Mail\Handlers\UserInvitationHandler::class,
+            'template' => 'emails.user-invitation',
+            // Không có 'schedule' → on-demand only
+        ],
+
+        'tenant_notification' => [
+            'enabled'  => env('TENANT_NOTIFICATION_ENABLED', true),
+            'handler'  => \App\Infrastructure\Mail\Handlers\TenantNotificationHandler::class,
+            'template' => 'emails.tenant-notification',
+        ],
+
+        'audit_digest' => [
+            'enabled'  => env('AUDIT_DIGEST_ENABLED', true),
+            'schedule' => env('AUDIT_DIGEST_SCHEDULE', 'daily_08_00'),
+            'handler'  => \App\Infrastructure\Mail\Handlers\AuditDigestHandler::class,
+            'template' => 'emails.audit-digest',
+        ],
+
+    ],
+];
 ```
 
 ---
 
 ## Functional Requirements
 
-- **FR1:** Config-based email types (no DB tables)
-- **FR2:** Pluggable handlers for each type
-- **FR3:** Scheduled sends via command (cron)
-- **FR4:** On-demand sends via MailService::dispatch()
-- **FR5:** Async delivery via queue jobs
-- **FR6:** Audit logging all sends
-- **FR7:** Multi-tenant support
-- **FR8:** Extensible (add new types = config + handler)
+| ID | Requirement |
+|---|---|
+| FR1 | Config-based email types — không cần migration để thêm type mới |
+| FR2 | Mỗi email type có Handler riêng implement `EmailHandlerInterface` |
+| FR3 | On-demand dispatch qua `MailServiceInterface::dispatch()` từ Use Case |
+| FR4 | Scheduled dispatch qua Artisan command (`mail:send-scheduled`) |
+| FR5 | Gửi async qua Laravel queue — không block HTTP request |
+| FR6 | Mọi lần gửi mail được log vào `audit_logs` (action: `mail.sent`) |
+| FR7 | Recipients được resolve lúc runtime từ DB — không hardcode trong config |
+| FR8 | Thêm email type mới không cần sửa core (`MailService`, `SendMailJob`) |
+| FR9 | Use Cases inject `MailServiceInterface` — không phụ thuộc Infrastructure |
 
 ---
 
-## No Database Tables
+## Non-Functional Requirements
 
-✓ Email types → config file
-✓ Schedules → config file
-✓ Recipients → config file
-✓ Templates → blade files
-
-Benefits:
-- Simpler deployment (no migrations)
-- Environment-based config (.env)
-- Easy to version control
+| Requirement | Target |
+|---|---|
+| Latency impact | Dispatch < 5ms — async, không block request |
+| Retry on failure | 3 retries, backoff 60s (Laravel queue default) |
+| Failed job handling | Log to `failed_jobs` table, alert via log channel |
+| Rate limiting | Không gửi quá 100 emails/phút (configurable) |
+| Test isolation | `NullMailService` cho test — không gửi mail thật, lưu in-memory |
+| Multi-tenant | Handler luôn nhận `$tenantId`, không được truy cập tenant khác |
 
 ---
 
-## Multi-Tenant Handling
+## Constraints
 
-- Each tenant can have different handlers/config
-- Queue jobs include tenant_id
-- Audit logs scoped to tenant_id
-- Handlers respect tenant isolation
+- Không dùng package ngoài (laravel-mailcoach, mailgun SDK...) — dùng Laravel Mail facade
+- Fit Clean Architecture: Interface ở Application, Implementation ở Infrastructure
+- `MailServiceInterface` phải được bind trong `AppServiceProvider`
+- Handlers không được gọi `session()`, `auth()`, `request()` — nhận context qua `$context` array
 
+---
+
+## Success Criteria (Testable)
+
+- [ ] `InviteUserUseCase` gọi `$mail->dispatch('user_invitation', ...)` → job được queue
+- [ ] `SendMailJob` gọi đúng handler → render template → gửi mail → log audit `mail.sent`
+- [ ] `mail:send-scheduled` chỉ dispatch các type có `schedule` và đúng thời điểm
+- [ ] `AuditDigestHandler` lấy recipients từ DB (owner/admin của tenant), không hardcode
+- [ ] Test với `NullMailService`: `assertSent('user_invitation')` pass, không gửi mail thật
+- [ ] Sai email type → `InvalidArgumentException`, không fail silently
+- [ ] Mail disabled (`MAIL_SERVICE_ENABLED=false`) → không gửi, không throw exception

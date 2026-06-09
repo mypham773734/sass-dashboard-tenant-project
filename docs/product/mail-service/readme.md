@@ -1,75 +1,122 @@
-﻿# Mail Service — Config-Based Email System
+# Mail Service
 
-**Status:** In Development  
+**Status:** Draft — Pending review  
 **Last Updated:** 2026-06-09
-**Estimated Effort:** 12-18 hours
 
-## Overview
+---
 
-Unified mail sending system with config-based email types and pluggable handlers. No database tables needed.
+## Problem
 
-**Email Types:**
-- Audit digest (daily scheduled)
-- User invitations (on-demand)
-- Tenant notifications (on-demand)
-- Extensible for more types
+Hệ thống cần gửi email cho nhiều mục đích (mời user, thông báo tenant, digest audit log) nhưng chưa có cơ chế thống nhất. Mỗi feature tự gửi mail theo cách riêng → không kiểm soát được, khó test, khó mở rộng.
 
-## Architecture at a Glance
+## Solution
+
+**Mail Service** — một lớp gửi email tập trung, config-driven, pluggable handler per email type.  
+Inject qua `MailServiceInterface` (Application layer) — đúng Clean Architecture, testable, không phụ thuộc vào Infrastructure.
 
 ```
-Application Layer
-  ├── EmailHandlerInterface (contract)
-  └── EmailDTO (data transfer object)
-       ↓
-Infrastructure Layer
-  ├── MailService (orchestrator)
-  ├── Handlers (AuditDigest, UserInvitation, TenantNotification)
-  ├── SendEmailJob (async queue)
-  ├── Mailable classes (Blade templates)
-  └── SendScheduledEmailsCommand (cron)
+Use Case → MailServiceInterface → (bound to) MailService → SendMailJob → Queue → Mail facade
 ```
 
-## Key Design Principles
+**Nguyên tắc cốt lõi:**
+- **Interface-first:** Use Cases inject `MailServiceInterface`, không biết concrete implementation
+- **Config-driven:** Mỗi email type có config riêng (`config/mail-service.php`) — không cần migration
+- **Pluggable:** Thêm email type mới = tạo Handler + cập nhật config — không sửa core
+- **Async:** Gửi qua queue, không block HTTP request
+- **Multi-tenant:** Recipients resolve lúc runtime (owner/admin của tenant), không hardcode
+- **Auditable:** Mọi lần gửi mail được log vào `audit_logs`
 
-- **No DB:** All config in `config/mail-service.php`
-- **Pluggable:** Add new email types = config + handler + mailable
-- **Multi-tenant:** Each handler receives `$tenantId`, respects tenant isolation
-- **Async:** Uses Laravel queue for delivery
-- **Auditable:** All sends logged to `audit_logs` table
-- **Clean Architecture:** Handlers in Infrastructure, contracts in Application
+---
 
-## Quick Links
+## Design Decision: Tại sao dùng Interface?
 
-- [01-REQUIREMENTS.md](./01-REQUIREMENTS.md) — Email types, config structure, requirements
-- [02-ARCHITECTURE.md](./02-ARCHITECTURE.md) — Service design, layer mapping, data flow  
-- [03-IMPLEMENTATION_PLAN.md](./03-IMPLEMENTATION_PLAN.md) — Tasks, phases, file structure
+Giống `AuditLoggerInterface` trong Audit System — Use Cases không được phụ thuộc trực tiếp vào Infrastructure:
 
-## Adding a New Email Type
+```php
+// ❌ Sai — Use Case phụ thuộc Infrastructure
+class InviteUserUseCase {
+    public function __construct(private MailService $mail) {}
+}
 
-Three steps:
+// ✅ Đúng — Use Case phụ thuộc Application contract
+class InviteUserUseCase {
+    public function __construct(private MailServiceInterface $mail) {}
+}
+```
 
-1. **Update config/mail-service.php:**
-   ```php
-   'my_email' => [
-       'enabled' => true,
-       'schedule' => 'daily_09_00',  // or remove for on-demand
-       'template' => 'emails.my-email',
-       'handler' => MyEmailHandler::class,
-   ],
-   ```
+Trong tests, bind `NullMailService` thay vì `MailService` → không gửi mail thật, kiểm tra được `assertSent()`.
 
-2. **Create handler** (implements `EmailHandlerInterface`):
-   ```php
-   class MyEmailHandler implements EmailHandlerInterface {
-       public function handle(int $tenantId, array $context): EmailDTO { }
-       public function shouldRun(string $schedule): bool { }
-   }
-   ```
+---
 
-3. **Create mailable + template** (Blade file)
+## Reading Order
 
-Done! No other changes needed.
+1. **[01-requirements.md](./01-requirements.md)** — Email types, functional & non-functional requirements
+2. **[02-architecture.md](./02-architecture.md)** — Layer mapping, diagrams, class design, data flow
+3. **[03-implementation_plan.md](./03-implementation_plan.md)** — Phases, file checklist, usage examples
 
-## Related Features
+---
 
-**AUDIT_EMAIL** (`docs/product/AUDIT_EMAIL/`) — Future enhancement for per-tenant email configuration in the database. Not in MVP scope.
+## Quick Reference
+
+### Gửi email từ Use Case
+
+```php
+class InviteUserUseCase
+{
+    public function __construct(
+        private readonly MailServiceInterface $mail,
+    ) {}
+
+    public function execute(InviteUserDTO $dto, int $tenantId): void
+    {
+        // ... business logic ...
+
+        $this->mail->dispatch('user_invitation', $tenantId, [
+            'invited_email' => $dto->email,
+            'invited_by'    => $dto->inviterName,
+        ]);
+    }
+}
+```
+
+### Thêm email type mới (3 bước)
+
+**Bước 1** — Thêm vào `config/mail-service.php`:
+```php
+'weekly_report' => [
+    'enabled'  => true,
+    'schedule' => 'weekly_friday_09_00',
+    'handler'  => WeeklyReportHandler::class,
+    'template' => 'emails.weekly-report',
+],
+```
+
+**Bước 2** — Tạo Handler (`implements EmailHandlerInterface`):
+```php
+class WeeklyReportHandler implements EmailHandlerInterface {
+    public function handle(int $tenantId, array $context): EmailDTO { ... }
+    public function shouldSend(string $schedule, Carbon $now): bool { ... }
+}
+```
+
+**Bước 3** — Tạo Mailable + Blade template.
+
+Không cần sửa gì khác — `MailService` tự resolve handler từ config qua `app($handlerClass)`.
+
+---
+
+## Config
+
+```env
+MAIL_SERVICE_ENABLED=true
+MAIL_SERVICE_QUEUE=mail
+AUDIT_DIGEST_ENABLED=true
+AUDIT_DIGEST_SCHEDULE=daily_08_00
+```
+
+---
+
+## Related
+
+- **[AUDIT_EMAIL](../audit-email/readme.md)** — Phase 2: per-tenant email config lưu DB (UI cho admin tự cấu hình). Blocked by MAIL_SERVICE MVP.
+- **Audit System** (`docs/product/audit-system/`) — `audit_logs` table được dùng bởi `AuditDigestHandler`
