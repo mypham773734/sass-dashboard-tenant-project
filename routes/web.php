@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\TenantController;
+use App\Http\Controllers\Admin\TenantSettingController;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
         
         Route::post('/tenant/{id}/switch', [TenantController::class, 'switchTenant'])->name('tenant.switch');
+
+        Route::prefix('tenant/{tenantId}/settings')
+            ->name('tenant.settings.')
+            ->group(function () {
+                Route::get('/{section?}', [TenantSettingController::class, 'index'])->name('index');
+                Route::post('/{section}', [TenantSettingController::class, 'update'])->name('update');
+            });
     });
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('login.destroy');

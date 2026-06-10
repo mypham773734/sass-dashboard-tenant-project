@@ -89,6 +89,10 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
 
+                                <a href="{{ route('tenant.settings.index', $tenant->id) }}" class="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition h-fit">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+
                                 <!-- Button Remove -->
                                 <form action="{{ route('tenant.destroy', $tenant->slug) }}" method="POST">
                                     @csrf

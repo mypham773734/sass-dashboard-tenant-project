@@ -13,9 +13,10 @@ class TenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        if(auth()->check()){
+        if(authContext()->checkLogin()){
             $builder->whereHas('users', function ($q){
-                $q->where('users.id', auth()->id());
+                $userId = authContext()->getId(); 
+                $q->where('users.id', $userId);
             });
         }
     }

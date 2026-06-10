@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Override;
+use App\Models\Scopes\TenantScope;
 
 class TenantSetting extends Model
 {
@@ -15,4 +17,10 @@ class TenantSetting extends Model
     protected $casts = [
         'value' => 'json',
     ];
+
+    #[Override]
+    protected static function booted()
+    {
+        static::addGlobalScope(new TenantScope());
+    }
 }

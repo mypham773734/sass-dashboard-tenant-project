@@ -37,6 +37,8 @@ use App\Application\Notification\Contracts\NotificationServiceInterface;
 use App\Infrastructure\Notifications\NotificationService;
 use App\Shared\Tenant\TenantContext;
 use App\Shared\Auth\AuthContext;
+use App\Domain\TenantSetting\Repositories\TenantSettingRepositoryInterface;
+use App\Infrastructure\Persistence\Repositories\EloquentTenantSettingRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,6 +61,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             TenantRepositoryInterface::class,
             EloquentTenantRepository::class,
+        );
+
+        $this->app->bind(
+            TenantSettingRepositoryInterface::class,
+            EloquentTenantSettingRepository::class,
         );
 
         $this->app->bind(
