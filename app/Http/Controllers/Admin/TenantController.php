@@ -5,18 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use App\Application\Tenant\UseCases\{
-    CreateTenantUseCase, 
-    DeleteTenantUseCase, 
-    FindTenantBySlugUseCase, 
-    GetPaginatedTenantsUseCase, 
+    CreateTenantUseCase,
+    DeleteTenantUseCase,
+    FindTenantBySlugUseCase,
+    GetPaginatedTenantsUseCase,
     UpdateTenantUseCase
-}; 
+};
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
 use App\Http\Requests\Tenant\{
-    UpdateTenantRequest, 
+    UpdateTenantRequest,
     StoreTenantRequest
 };
-use App\DTOs\Tenants\CreateTenantDTO; 
+use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Application\Tenant\DTOs\UpdateTenantDTO; 
 
 class TenantController extends Controller

@@ -3,10 +3,10 @@
 namespace App\Application\Tenant\UseCases;
 
 use App\Application\Mail\Contracts\MailServiceInterface;
+use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Domain\Tenant\Entities\TenantEntity;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Domain\User\Repositories\UserRepositoryInterface;
-use App\DTOs\Tenants\CreateTenantDTO;
 
 class CreateTenantUseCase
 {
@@ -22,8 +22,8 @@ class CreateTenantUseCase
             id:          null,
             name:        $dto->name,
             slug:        $dto->slug,
-            isActive:    $dto->is_active,
-            trialEndsAt: $dto->trial_ends_at,
+            isActive:    $dto->isActive,
+            trialEndsAt: $dto->trialEndsAt,
         );
 
         $created = $this->tenantRepository->create($entity);

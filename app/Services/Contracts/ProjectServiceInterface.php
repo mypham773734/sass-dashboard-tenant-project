@@ -1,8 +1,8 @@
 <?php 
 
-namespace App\Services\Contracts; 
+namespace App\Services\Contracts;
 
-use App\DTOs\Projects\CreateProjectDTO; 
+use App\Application\Project\DTOs\CreateProjectDTO; 
 
 interface ProjectServiceInterface{
     public function getProject($limit = 10); 

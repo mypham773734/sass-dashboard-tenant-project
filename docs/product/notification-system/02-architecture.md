@@ -1,270 +1,470 @@
 # Notification System — Architecture
 
 **Status:** Planning  
-**Last Updated:** 2026-06-09
+**Level:** Developer who understands basics  
+**Purpose:** How the system works, what classes exist, data flow
 
 ---
 
-## 1. Design Decisions
+## 🧠 How It Works (Simple Version)
 
-### Pattern: Giống Mail Service, không phải Laravel Notification
+```
+1. Code triggers event:
+   $notificationService->notifyOne('task.assigned', $tenantId, $userId, $context)
 
-Laravel có built-in `Notification` facade. Tuy nhiên project này **không dùng** vì:
+2. Service dispatches job to queue:
+   WriteNotificationJob::dispatch(event, tenantId, userId, context)
 
-| | Laravel Notification | Custom NotificationService |
-|---|---|---|
-| Clean Architecture | ❌ Eloquent trong UseCase | ✅ Interface-based |
-| Multi-tenant scope | ❌ Phải tự add | ✅ Built-in |
-| Config per event | ❌ Hard | ✅ `config/notification.php` |
-| Test isolation | ⚠️ Fake facade | ✅ NullNotificationService |
-| Consistency với project | ❌ Different pattern | ✅ Giống AuditLogger, MailService |
+3. Queue worker runs job:
+   - Look up handler class from config
+   - Call handler->handle(tenantId, context) → get NotificationDTO
+   - Save NotificationDTO to notifications table
 
-**Quyết định:** Dùng `NotificationServiceInterface` pattern — consistent với cách project đã làm với AuditLogger và MailService.
+4. Frontend polls every 5 seconds:
+   - Livewire NotificationBell component
+   - Load unread count + latest 10 notifications
+   - User clicks bell → dropdown opens
 
-### Polling thay vì WebSocket
+5. User sees notifications + can mark as read
+```
 
-- MVP không cần real-time millisecond
-- Livewire `wire:poll.5s` là đủ — đơn giản, không cần Redis Pub/Sub, không cần Laravel Echo
-- Có thể nâng lên SSE hoặc WebSocket sau nếu cần
+**Key point:** All async (via queue) → no blocking
 
 ---
 
-## 2. Layer Mapping
+## 🏗️ Layer Structure
+
+### Domain Layer (Pure PHP, No Framework)
 
 ```
-Domain Layer
-├── Entities/NotificationEntity.php
-└── Repositories/NotificationRepositoryInterface.php
-
-Application Layer
-├── Contracts/NotificationServiceInterface.php
-├── Contracts/NotificationHandlerInterface.php
-└── DTOs/NotificationDTO.php
-
-Infrastructure Layer
-├── Notifications/NotificationService.php          (implements interface)
-├── Notifications/NullNotificationService.php      (tests)
-├── Notifications/Handlers/
-│   ├── TaskAssignedHandler.php
-│   ├── TaskStatusChangedHandler.php
-│   ├── TenantMemberAddedHandler.php
-│   ├── TenantMemberRemovedHandler.php
-│   └── TenantRoleChangedHandler.php
-├── Notifications/Jobs/WriteNotificationJob.php
-├── Persistence/Repositories/EloquentNotificationRepository.php
-└── Console/Commands/CleanupOldNotificationsCommand.php
-
-Models
-└── Notification.php (Eloquent)
-
-Http/Presentation Layer
-└── resources/views/components/notification-bell.blade.php  (Livewire Volt)
-
-Config
-└── config/notification.php
+app/Domain/Notification/
+├── Entities/
+│   └── NotificationEntity.php          ← what a notification is
+└── Repositories/
+    └── NotificationRepositoryInterface.php  ← contract for DB access
 ```
+
+**Purpose:** Define WHAT a notification is, independently of database/framework.
 
 ---
 
-## 3. System Overview
+### Application Layer (Interfaces + DTOs)
 
 ```
-UseCase (e.g. AssignTaskUseCase)
-        │
-        │  $this->notificationService->notifyOne('task.assigned', $tenantId, $assigneeId, [...])
-        ▼
-NotificationServiceInterface
-        │
-        │  dispatch job to queue
-        ▼
-WriteNotificationJob (queue: 'notifications', tries=3, backoff=60)
-        │
-        │  resolve handler from config
-        │  handler->handle(tenantId, context) → NotificationDTO
-        ▼
-EloquentNotificationRepository
-        │
-        │  insert into notifications table
-        ▼
-notifications table
-        │
-        │  Livewire polling (every 5s)
-        ▼
-notification-bell component
-        │
-        ├── badge: unread count
-        └── dropdown: 10 latest
+app/Application/Notification/
+├── Contracts/
+│   ├── NotificationServiceInterface.php    ← How you USE notifications
+│   └── NotificationHandlerInterface.php    ← How events are handled
+└── DTOs/
+    ├── NotificationDTO.php                 ← data passed between layers
+    └── CreateNotificationDTO.php
 ```
+
+**Purpose:** Define the interface that UseCase depends on (not implementation).
 
 ---
 
-## 4. Class Diagram
+### Infrastructure Layer (Implementation + Config)
 
 ```
-NotificationServiceInterface
-  + notify(event, tenantId, recipientIds[], context): void
-  + notifyOne(event, tenantId, userId, context): void
+app/Infrastructure/Notifications/
+├── NotificationService.php              ← implements interface
+├── NullNotificationService.php           ← for tests
+├── Handlers/
+│   ├── GenericNotificationHandler.php    ← template + config driven
+│   ├── BaseNotificationHandler.php       ← abstract base for complex
+│   ├── TenantMemberAddedHandler.php      ← extends Base
+│   ├── TenantMemberRemovedHandler.php    ← extends Base
+│   └── TenantRoleChangedHandler.php      ← extends Base
+└── Jobs/
+    └── WriteNotificationJob.php          ← queue job
 
-NotificationService (implements interface)
-  - repository: NotificationRepositoryInterface
-  + notify(...): void   → dispatch WriteNotificationJob per recipient
-  + notifyOne(...): void
-
-NullNotificationService (implements interface)
-  - sent: array
-  + assertNotified(event, userId): bool
-  + reset(): void
-
-NotificationHandlerInterface
-  + handle(tenantId, context): NotificationDTO
-
-NotificationDTO
-  + event: string
-  + recipientIds: int[]
-  + title: string
-  + body: ?string
-  + url: ?string
-  + data: array
-
-WriteNotificationJob (ShouldQueue)
-  + handle(NotificationHandlerInterface $handler, NotificationRepositoryInterface $repo)
-
-NotificationRepositoryInterface
-  + createForUser(dto, userId, tenantId): NotificationEntity
-  + getUnreadByUser(userId, tenantId, limit): array
-  + countUnreadByUser(userId, tenantId): int
-  + markAsRead(notificationId, userId): void
-  + markAllAsRead(userId, tenantId): void
+config/notification.php                  ← configuration
 ```
+
+**Purpose:** Actual implementation (can change without affecting UseCase).
 
 ---
 
-## 5. Data Flow: task.assigned
+### Presentation Layer (UI)
 
 ```
-1. AssignTaskUseCase::execute()
-       │
-       └── notificationService->notifyOne(
-               'task.assigned',
-               $tenantId,
-               $assigneeId,
-               ['task_id' => $task->id, 'task_title' => $task->title, 'actor_name' => $actorName]
-           )
-
-2. NotificationService::notifyOne()
-       │
-       └── WriteNotificationJob::dispatch(
-               event: 'task.assigned',
-               tenantId: $tenantId,
-               userId: $assigneeId,
-               context: [...]
-           )->onQueue('notifications')
-
-3. WriteNotificationJob::handle()
-       │
-       ├── resolve TaskAssignedHandler from config
-       ├── $dto = handler->handle($tenantId, $context)
-       │     └── title: "Alice assigned you \"Fix login bug\""
-       │         url:   route('task.show', $task_id)
-       │         data:  ['task_id' => 5, 'actor_name' => 'Alice']
-       │
-       └── repository->createForUser($dto, $userId, $tenantId)
-
-4. Livewire notification-bell (polling 5s)
-       │
-       ├── countUnreadByUser() → badge number
-       └── getUnreadByUser()   → dropdown items
+resources/views/components/
+└── notification-bell.blade.php          ← Livewire component
 ```
+
+**Purpose:** Show notifications to user.
 
 ---
 
-## 6. Livewire Component: NotificationBell
+## 🎯 Two Handler Types
 
-```
-notification-bell (Livewire Volt, wire:poll.5s)
-  state:
-    - notifications: array  (10 latest)
-    - unreadCount: int
-    - isOpen: bool
+### GenericHandler (Simple, 80% of events)
 
-  mount():
-    load notifications + count
-
-  poll() [every 5s]:
-    refresh count only (cheap query)
-
-  open():
-    isOpen = true
-    load full list
-
-  markRead(id):
-    repository->markAsRead(id, auth user)
-    refresh list
-
-  markAllRead():
-    repository->markAllAsRead(auth user, current tenant)
-    refresh
-```
-
-**Polling strategy:** Poll unread count mỗi 5s (chỉ 1 COUNT query). Load full list chỉ khi user click mở dropdown → không lãng phí bandwidth.
-
----
-
-## 7. Multi-Tenant Scoping
-
-Notification được scope theo `tenant_id` **và** `user_id`:
-
-```
-Khi user switch tenant:
-  → TenantContext thay đổi
-  → notification-bell re-mount với tenantId mới
-  → Badge và dropdown chỉ show notification của tenant mới
-
-Một user thuộc 2 tenants:
-  → Tenant A: 3 unread
-  → Tenant B: 5 unread
-  → Badge chỉ show số của tenant đang active
-```
-
-Handler resolve recipients từ DB — không nhận từ caller:
+**Use when:** Event has simple title + single/multiple recipients
 
 ```php
-// TaskAssignedHandler
-public function handle(int $tenantId, array $context): NotificationDTO
-{
-    // context chứa assignee_id — truyền từ UseCase
-    return new NotificationDTO(
-        event:        'task.assigned',
-        recipientIds: [$context['assignee_id']],
-        title:        "{$context['actor_name']} assigned you \"{$context['task_title']}\"",
-        url:          route('task.show', $context['task_id']),
-        data:         $context,
-    );
+// config/notification.php
+'task.assigned' => [
+    'handler'        => GenericNotificationHandler::class,
+    'recipients'     => 'assignee_id',        // from context
+    'title_template' => '{actor_name} assigned you "{task_title}"',
+    'url_template'   => 'task.show:{task_id}',
+],
+```
+
+**GenericHandler does:**
+- Read config
+- Render title: `{actor_name}` → Alice
+- Resolve recipients: `assignee_id` → 5
+- Build URL: `task.show:{task_id}` → /tasks/123
+- Save to DB
+
+---
+
+### BaseHandler (Complex, 20% of events)
+
+**Use when:** Need to query DB or complex logic
+
+```php
+// Code
+class TenantMemberAddedHandler extends BaseNotificationHandler {
+    protected string $event = 'tenant.member_added';
+
+    public function __construct(
+        private readonly UserRepository $userRepo,
+    ) {}
+
+    protected function resolveRecipients(int $tenantId, array $context): array {
+        // Query admins from DB
+        return $this->userRepo->findAdminsByTenant($tenantId);
+    }
+
+    protected function renderTitle(array $context): string {
+        return "{$context['new_user_name']} joined the workspace";
+    }
+
+    protected function buildUrl(int $tenantId, array $context): string {
+        return route('tenant.members');
+    }
+}
+
+// config/notification.php
+'tenant.member_added' => [
+    'handler' => TenantMemberAddedHandler::class,  // no template, queries instead
+],
+```
+
+**BaseHandler does:**
+- You override abstract methods:
+  - `resolveRecipients()` — query from DB
+  - `renderTitle()` — format title
+  - `buildUrl()` — create URL
+- Parent class `handle()` calls your methods + saves to DB
+
+---
+
+## 📊 Decision Tree: GenericHandler or BaseHandler?
+
+```
+New event?
+
+├─ Recipients = single user from context (assignee_id)?
+├─ Title = simple template (no if-else)?
+├─ URL = route + ID from context?
+└─ No DB queries needed?
+   YES → GenericHandler (just config)
+
+├─ Need to query DB for recipients?
+├─ Conditional title rendering?
+├─ Multiple ways to build URL?
+└─ Complex logic?
+   YES → BaseHandler (create class)
+```
+
+**Examples:**
+- `task.assigned` → Generic (recipients = assignee_id)
+- `task.status_changed` → Generic (recipients = [creator, assignee])
+- `tenant.member_removed` → Base (query admins + removed user from DB)
+- `tenant.role_changed` → Base (conditional message based on new role)
+
+---
+
+## 📁 Key Classes
+
+### NotificationServiceInterface
+
+```php
+interface NotificationServiceInterface {
+    // Notify one user
+    public function notifyOne(
+        string $event,
+        int $tenantId,
+        int $userId,
+        array $context = []
+    ): void;
+
+    // Notify multiple users
+    public function notify(
+        string $event,
+        int $tenantId,
+        array $recipientIds,
+        array $context = []
+    ): void;
 }
 ```
 
----
-
-## 8. Cleanup Strategy
-
-`CleanupOldNotificationsCommand` (`notification:cleanup`):
-- Chạy hàng ngày qua scheduler
-- Xóa notification `created_at < now() - 30 days`
-- Xóa theo `tenant_id` batch để tránh lock bảng
-- Log số records đã xóa
+**Usage:** Inject into UseCase, call it to trigger notification.
 
 ---
 
-## 9. Integration với UseCase hiện có
+### WriteNotificationJob (Queue Job)
 
-Các UseCase cần inject thêm `NotificationServiceInterface`:
+```php
+class WriteNotificationJob implements ShouldQueue {
+    public function __construct(
+        private string $event,
+        private int $tenantId,
+        private int $userId,
+        private array $context,
+    ) {}
 
-| UseCase | Event | Khi nào |
-|---|---|---|
-| `AssignTaskUseCase` (cần tạo) | `task.assigned` | Sau khi assign |
-| `UpdateTaskUseCase` | `task.status_changed` | Khi status thay đổi |
-| `AttachUserToTenantUseCase` (cần tạo) | `tenant.member_added` | Sau khi attach |
-| `DetachUserFromTenantUseCase` (cần tạo) | `tenant.member_removed` | Trước khi detach |
-| `ChangeUserRoleUseCase` (cần tạo) | `tenant.role_changed` | Sau khi đổi role |
+    public function handle(NotificationRepositoryInterface $repo): void {
+        // 1. Resolve handler from config
+        $handler = $this->resolveHandler();  // GenericHandler or TenantMemberAddedHandler
 
-> `CreateTenantUseCase` đã inject `MailServiceInterface`. Thêm `NotificationServiceInterface` theo cùng pattern.
+        // 2. Call handler
+        $dto = $handler->handle($this->tenantId, $this->context);
+
+        // 3. Save to DB
+        $repo->createForUser($dto, $this->userId, $this->tenantId);
+    }
+}
+```
+
+**Flow:**
+- Dispatched by NotificationService (non-blocking)
+- Worker picks it up
+- Gets handler, calls it, saves result
+
+---
+
+### NotificationHandlerInterface
+
+```php
+interface NotificationHandlerInterface {
+    // Transform event data into notification
+    public function handle(int $tenantId, array $context): NotificationDTO;
+}
+```
+
+**Implemented by:**
+- GenericNotificationHandler
+- BaseNotificationHandler (abstract)
+- TenantMemberAddedHandler (extends Base)
+- etc.
+
+---
+
+### NotificationDTO
+
+```php
+class NotificationDTO {
+    public function __construct(
+        public readonly string $event,           // 'task.assigned'
+        public readonly array $recipientIds,     // [5]
+        public readonly string $title,           // 'Alice assigned you ...'
+        public readonly ?string $body,           // 'Due tomorrow'
+        public readonly string $url,             // '/tasks/123'
+        public readonly array $data = [],        // ['task_id' => 123]
+    ) {}
+}
+```
+
+**Used to:** Pass data from handler to job.
+
+---
+
+## 🔄 Data Flow: Simple Event
+
+### Example: task.assigned
+
+```
+1. Code in UseCase:
+   $notificationService->notifyOne('task.assigned', $tenantId, $assigneeId, [
+       'task_id'    => 123,
+       'task_title' => 'Fix bug',
+       'actor_name' => 'Alice',
+   ])
+
+2. NotificationService::notifyOne():
+   ✅ Check enabled?
+   ✅ Check event enabled?
+   → WriteNotificationJob::dispatch(...) → queue
+
+3. Queue Worker (async):
+   WriteNotificationJob::handle()
+   
+   a. Resolve handler:
+      handler = GenericNotificationHandler  (from config)
+   
+   b. Call handler:
+      $dto = handler->handle($tenantId, $context)
+      - Reads config['task.assigned']
+      - Renders title: 'Alice assigned you "Fix bug"'
+      - Resolves recipients: [5] (from assignee_id)
+      - Builds URL: /tasks/123
+      → Returns NotificationDTO
+   
+   c. Save to DB:
+      INSERT into notifications (user_id, tenant_id, event, title, url, data, is_read)
+      VALUES (5, 3, 'task.assigned', 'Alice assigned you "Fix bug"', '/tasks/123', {...}, false)
+
+4. Frontend (Livewire polling):
+   Every 5 seconds:
+   - Query: SELECT COUNT(*) FROM notifications WHERE user_id=5 AND tenant_id=3 AND is_read=false
+   - Result: 1 unread
+   - Update badge: [🔔 1]
+
+5. User clicks bell:
+   - Dropdown opens
+   - Shows notification: "Alice assigned you Fix bug"
+   - Click → redirect to /tasks/123
+   - Mark as read
+```
+
+---
+
+## 🔄 Data Flow: Complex Event
+
+### Example: tenant.member_removed
+
+```
+1. Code in UseCase:
+   $notificationService->notify('tenant.member_removed', $tenantId, 
+       $adminIds + [$removedUserId],  // multiple recipients
+       ['removed_user_name' => 'Bob']
+   )
+
+2. NotificationService::notify():
+   → For each recipient:
+      WriteNotificationJob::dispatch('tenant.member_removed', tenantId, userId, context)
+
+3. Queue Worker (per recipient job):
+   WriteNotificationJob::handle()
+   
+   a. Resolve handler:
+      handler = TenantMemberRemovedHandler  (from config)
+   
+   b. Call handler:
+      $dto = handler->handle($tenantId, $context)
+      - resolveRecipients() → queries DB → [admin1, admin2, removedUser]
+      - renderTitle() → "Bob removed from workspace"
+      - buildUrl() → route('tenant.members')
+      → Returns NotificationDTO
+   
+   c. Save to DB:
+      (repeated for each recipient job)
+
+4. Database after all jobs done:
+   notification 1: admin1 gets notified
+   notification 2: admin2 gets notified  
+   notification 3: removedUser gets notified
+   (same title, same URL, different user_id)
+
+5. Frontend:
+   Each user sees their own notifications
+```
+
+---
+
+## 🎯 Configuration Driven = Flexibility
+
+### Adding New Simple Event (No Code!)
+
+```php
+// config/notification.php
+'invoice.approved' => [
+    'enabled'           => env('NOTIF_INVOICE_APPROVED', true),
+    'handler'           => GenericNotificationHandler::class,
+    'recipients'        => 'requester_id',
+    'title_template'    => 'Invoice #{invoice_number} approved ✓',
+    'body_template'     => 'Amount: ${amount}',
+    'url_template'      => 'invoice.show:{invoice_id}',
+    'data_keys'         => ['invoice_id', 'invoice_number', 'amount'],
+],
+```
+
+That's it! No code needed. GenericHandler automatically handles everything.
+
+---
+
+## 🧪 Testing: NullNotificationService
+
+```php
+// In test setup:
+$this->app->bind(NotificationServiceInterface::class, NullNotificationService::class);
+
+// In test:
+public function test_notify_on_task_assign() {
+    $null = app(NullNotificationService::class);
+    
+    $this->useCase->execute($dto, $tenantId);
+    
+    // Assert notification was sent (no DB, no queue, in-memory only)
+    $this->assertTrue($null->assertNotified('task.assigned', $userId));
+}
+```
+
+**Benefits:**
+- No database hit
+- No queue needed
+- Fast tests
+- Can verify exact notifications sent
+
+---
+
+## 🚀 Multi-Tenant Scoping
+
+```
+Notification is scoped to BOTH user_id AND tenant_id
+
+User Alice:
+  - Tenant 1 (Acme Corp): 3 unread
+  - Tenant 2 (Beta Inc): 5 unread
+  
+When Alice switches tenant:
+  → App loads notifications WHERE user_id=alice AND tenant_id=current
+  → Badge shows only count for current tenant
+  → Dropdown shows only notifications for current tenant
+  
+This is automatic because:
+  1. tenantId always passed explicitly
+  2. Repository scopes queries by tenant
+  3. Livewire component passes current tenant
+```
+
+---
+
+## ⚙️ Why Custom Service (Not Laravel Notification)?
+
+**TLDR:** We need:
+- ✅ Clean code (no Eloquent models in UseCase)
+- ✅ Multi-tenant built-in (not manual)
+- ✅ Config-driven (add events without creating classes)
+- ✅ Flexible recipients (query from DB)
+- ✅ Good testing (NullService)
+
+Laravel Notification is powerful but doesn't fit these needs well.
+
+👉 **[Full comparison](./readme.md#tại-sao-custom-notificationservice-không-dùng-laravel-notification)** (optional read)
+
+---
+
+## 📚 Next Step
+
+Read [03-implementation-plan.md](./03-implementation-plan.md) to:
+- Implement the system step by step
+- Code examples for each handler
+- What files to create
+- Testing strategy

@@ -1,9 +1,8 @@
 <?php 
 
-namespace App\Services\Contracts; 
+namespace App\Services\Contracts;
 
-use App\DTOs\Tenants\CreateTenantDTO; 
-
+use App\Application\Tenant\DTOs\CreateTenantDTO;
 use App\Models\Tenant; 
 
 interface TenantServiceInterface{

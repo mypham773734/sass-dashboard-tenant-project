@@ -1,209 +1,293 @@
 # Notification System — Requirements
 
 **Status:** Planning  
-**Last Updated:** 2026-06-09
+**Level:** Developer reading  
+**Purpose:** What notifications are, what data they need
 
 ---
 
-## 1. Event Types (MVP)
+## 🎯 Design Decision: Custom Service vs Laravel Notification
 
-### Priority Levels
+**Quick answer:** We build custom `NotificationServiceInterface` instead of using Laravel's built-in because:
 
-- **High** — hành động ảnh hưởng trực tiếp đến user hoặc security
-- **Medium** — thay đổi trong workspace user đang làm việc
-- **Low** — thông tin background, không cần action ngay
+| Need | Laravel | Ours |
+|---|---|---|
+| Keep UseCase clean (no Eloquent) | ❌ | ✅ |
+| Multi-tenant support | ❌ | ✅ |
+| Config-driven (add events via config) | ❌ | ✅ |
+| Flexible recipients (query from DB) | ❌ | ✅ |
+| Easy testing | ❌ | ✅ |
 
-### Event Table
-
-| Event Key | Trigger | Recipients | Priority | Link đến |
-|---|---|---|---|---|
-| `task.assigned` | User được assign vào task | Assignee | High | Task detail |
-| `task.status_changed` | Trạng thái task thay đổi | Creator + Assignee | Medium | Task detail |
-| `task.mentioned` | User được mention trong description/comment | User được mention | High | Task detail |
-| `project.created` | Project mới được tạo | Owner + Admins của tenant | Low | Project detail |
-| `project.deleted` | Project bị xóa | Owner + Admins | Medium | Tenant dashboard |
-| `tenant.member_added` | User mới join workspace | Owner + Admins | Medium | User list |
-| `tenant.member_removed` | User bị remove khỏi workspace | Owner + Admins + User bị remove | High | Tenant dashboard |
-| `tenant.role_changed` | Role của user trong tenant thay đổi | User bị đổi role + Owner | High | Profile |
-| `tenant.invitation_accepted` | User chấp nhận lời mời | Người mời | Medium | User list |
-
-> **Phase 1 (MVP):** Triển khai `task.assigned`, `task.status_changed`, `tenant.member_added`, `tenant.member_removed`, `tenant.role_changed`.  
-> **Phase 2:** `mention`, `project.created`, `project.deleted`, `tenant.invitation_accepted`.
+👉 **Deep dive:** [02-architecture.md](./02-architecture.md#1-design-decisions) (optional read)
 
 ---
 
-## 2. Data Model
+## 📋 What Events Do We Support? (MVP)
 
-### `notifications` table
+| Event | When | Who Gets It | Priority |
+|---|---|---|---|
+| `task.assigned` | User assigned to task | Assignee | 🔴 High |
+| `task.status_changed` | Task status changed | Creator + Assignee | 🟡 Medium |
+| `tenant.member_added` | New user joins workspace | Admins | 🟡 Medium |
+| `tenant.member_removed` | User kicked from workspace | Admins + kicked user | 🔴 High |
+| `tenant.role_changed` | User role changes (admin→member) | Affected user | 🔴 High |
 
-```
-id                bigint PK
-tenant_id         bigint FK → tenants (tenant scoping)
-user_id           bigint FK → users   (recipient)
-event             string               (e.g. 'task.assigned')
-title             string               (rendered text, e.g. "Alice assigned you a task")
-body              string nullable      (optional extra detail)
-url               string nullable      (deeplink vào resource)
-is_read           boolean default false
-read_at           timestamp nullable
-data              json nullable        (context payload — task_id, actor_name, ...)
-created_at        timestamp
-updated_at        timestamp
-```
-
-**Indexes cần thiết:**
-- `(user_id, tenant_id, is_read)` — query unread count
-- `(user_id, tenant_id, created_at DESC)` — query dropdown list
-- `(tenant_id)` — cleanup job theo tenant
-
-**Không có `updated_at` logic:** Notification không được edit, chỉ flip `is_read`.
+**Phase 2 (later):** mentions, project created, project deleted, invitation accepted
 
 ---
 
-## 3. Notification Entity (Domain)
+## 🗄️ Data: What's a Notification?
+
+### Database Table: `notifications`
 
 ```
-NotificationEntity
-  id:        int
-  tenantId:  int
-  userId:    int
-  event:     string
-  title:     string
-  body:      ?string
-  url:       ?string
-  isRead:    bool
-  readAt:    ?string
-  data:      ?array
-  createdAt: string
+id           → unique ID (1, 2, 3, ...)
+user_id      → who receives this (recipient)
+tenant_id    → which workspace (for multi-tenant scoping)
+event        → what happened ('task.assigned', 'tenant.member_removed', ...)
+title        → human-readable text ("Alice assigned you Task #5")
+body         → optional extra detail ("Due tomorrow")
+url          → where to go when clicked (route('task.show', 5))
+is_read      → true/false (read or unread)
+read_at      → when marked as read (timestamp)
+data         → extra JSON (task_id, actor_name, ...) for reference
+created_at   → when created
+updated_at   → when last read
 ```
 
----
-
-## 4. Repository Interface
-
-```
-NotificationRepositoryInterface
-  createForUser(CreateNotificationDTO $dto, int $userId, int $tenantId): NotificationEntity
-  getUnreadByUser(int $userId, int $tenantId, int $limit = 10): array
-  countUnreadByUser(int $userId, int $tenantId): int
-  markAsRead(int $notificationId, int $userId): void
-  markAllAsRead(int $userId, int $tenantId): void
-  deleteOlderThan(int $tenantId, Carbon $before): int
-```
-
----
-
-## 5. NotificationServiceInterface (Application Layer)
-
-Cùng pattern với `MailServiceInterface` và `AuditLoggerInterface`:
-
-```
-NotificationServiceInterface
-  notify(string $event, int $tenantId, array $recipientIds, array $context = []): void
-  notifyOne(string $event, int $tenantId, int $userId, array $context = []): void
-```
-
-- `notify()` — gửi đến nhiều recipients (e.g. tất cả admin của tenant)
-- `notifyOne()` — shorthand gửi đến 1 user (e.g. assignee)
-- Cả hai đều **dispatch job vào queue**, không ghi DB trực tiếp
-
-### NullNotificationService (Tests)
-
-```
-NullNotificationService
-  assertNotified(string $event, int $userId): bool
-  assertNotNotified(string $event): bool
-  getAll(): array
-  reset(): void
-```
-
----
-
-## 6. NotificationHandlerInterface
-
-Mỗi event type có một handler riêng, cùng pattern với `EmailHandlerInterface`:
-
-```
-NotificationHandlerInterface
-  handle(int $tenantId, array $context): NotificationDTO
-```
-
-`NotificationDTO` chứa:
-```
-event:        string
-recipientIds: int[]
-title:        string
-body:         ?string
-url:          ?string
-data:         array
-```
-
-**Handler có trách nhiệm:**
-- Resolve recipients từ DB (không nhận từ caller)
-- Render `title` và `body` từ context
-- Tạo `url` deeplink đến resource
-
----
-
-## 7. Config (`config/notification.php`)
+### Example Row
 
 ```php
-return [
-    'enabled' => env('NOTIFICATION_ENABLED', true),
-    'queue'   => env('NOTIFICATION_QUEUE', 'notifications'),
-
-    'event_types' => [
-        'task.assigned' => [
-            'enabled' => env('NOTIFICATION_TASK_ASSIGNED', true),
-            'handler' => TaskAssignedNotificationHandler::class,
-        ],
-        'task.status_changed' => [
-            'enabled' => env('NOTIFICATION_TASK_STATUS_CHANGED', true),
-            'handler' => TaskStatusChangedNotificationHandler::class,
-        ],
-        'tenant.member_added' => [...],
-        'tenant.member_removed' => [...],
-        'tenant.role_changed' => [...],
-    ],
-];
+[
+  'id'        => 42,
+  'user_id'   => 5,           // Alice
+  'tenant_id' => 3,           // Acme Corp
+  'event'     => 'task.assigned',
+  'title'     => 'Bob assigned you "Fix login bug"',
+  'body'      => null,
+  'url'       => '/tasks/123',
+  'is_read'   => false,
+  'read_at'   => null,
+  'data'      => json_encode(['task_id' => 123, 'actor_name' => 'Bob']),
+  'created_at' => '2026-06-10 14:30:00',
+]
 ```
 
 ---
 
-## 8. Functional Requirements
+## 🔧 How Code Sends Notifications
 
-| ID | Requirement |
-|---|---|
-| FR-01 | Bell icon header hiển thị badge số unread (0 không hiện badge) |
-| FR-02 | Dropdown hiển thị tối đa 10 notification gần nhất, mới nhất ở trên |
-| FR-03 | Click vào notification → mark as read + redirect đến `url` |
-| FR-04 | "Mark all as read" button trong dropdown |
-| FR-05 | Notification scoped theo `tenant_id` — chỉ thấy notification của tenant đang active |
-| FR-06 | Notification của tenant khác không hiển thị khi switch tenant |
-| FR-07 | Ghi notification qua queue — không block HTTP request |
-| FR-08 | Có thể bật/tắt từng event type qua `.env` |
-| FR-09 | Notification cũ hơn 30 ngày được cleanup tự động |
-| FR-10 | Unread count cập nhật mà không cần reload trang (Livewire polling) |
+### API: NotificationServiceInterface
+
+```php
+interface NotificationServiceInterface {
+    
+    // Notify ONE user
+    public function notifyOne(
+        string $event,              // 'task.assigned'
+        int $tenantId,              // 3
+        int $userId,                // 5
+        array $context = []         // ['task_id' => 123, 'task_title' => '...']
+    ): void;
+
+    // Notify MULTIPLE users
+    public function notify(
+        string $event,              // 'tenant.member_removed'
+        int $tenantId,              // 3
+        array $recipientIds,        // [1, 2, 4]  (admin user IDs)
+        array $context = []
+    ): void;
+}
+```
+
+### Real Code Example
+
+```php
+// In UpdateTaskUseCase
+class UpdateTaskUseCase {
+    public function __construct(
+        private readonly NotificationServiceInterface $notificationService,
+        private readonly TaskRepositoryInterface $repository,
+    ) {}
+
+    public function execute(int $taskId, UpdateTaskDTO $dto, int $tenantId): TaskEntity
+    {
+        $oldTask = $this->repository->findById($taskId);
+        $newTask = $this->repository->update($taskId, $dto);
+
+        // Notify assignee if status changed
+        if ($oldTask->status !== $newTask->status && $newTask->assigneeId) {
+            $this->notificationService->notifyOne(
+                event:    'task.status_changed',
+                tenantId: $tenantId,
+                userId:   $newTask->assigneeId,
+                context:  [
+                    'task_id'     => $newTask->id,
+                    'task_title'  => $newTask->title,
+                    'old_status'  => $oldTask->status,
+                    'new_status'  => $newTask->status,
+                    'actor_name'  => auth()->user()->name,  // who changed it
+                ]
+            );
+        }
+
+        return $newTask;
+    }
+}
+```
 
 ---
 
-## 9. Non-Functional Requirements
+## 🔌 Data Models (Domain Layer)
 
-| ID | Requirement |
-|---|---|
-| NFR-01 | Ghi notification không làm tăng latency HTTP request (async queue) |
-| NFR-02 | Query unread count < 10ms (index trên `user_id, tenant_id, is_read`) |
-| NFR-03 | `NullNotificationService` dùng trong tất cả tests — không ghi DB |
-| NFR-04 | Retry tối đa 3 lần nếu job fail, backoff 60s |
-| NFR-05 | Cleanup job chạy hàng ngày, giữ tối đa 30 ngày |
+### NotificationEntity (Pure PHP, no Eloquent)
+
+```php
+class NotificationEntity {
+    public function __construct(
+        public readonly int $id,
+        public readonly int $userId,
+        public readonly int $tenantId,
+        public readonly string $event,
+        public readonly string $title,
+        public readonly ?string $body,
+        public readonly ?string $url,
+        public readonly bool $isRead,
+        public readonly ?string $readAt,
+        public readonly array $data,
+        public readonly string $createdAt,
+    ) {}
+}
+```
+
+### NotificationRepositoryInterface
+
+```php
+interface NotificationRepositoryInterface {
+    
+    // Create (called by queue job)
+    public function createForUser(
+        CreateNotificationDTO $dto,
+        int $userId,
+        int $tenantId
+    ): NotificationEntity;
+
+    // Read (called by Livewire component)
+    public function getUnreadByUser(int $userId, int $tenantId, int $limit = 10): array;
+    public function countUnreadByUser(int $userId, int $tenantId): int;
+
+    // Update
+    public function markAsRead(int $notificationId, int $userId): void;
+    public function markAllAsRead(int $userId, int $tenantId): void;
+
+    // Delete old ones (cleanup job)
+    public function deleteOlderThan(int $tenantId, Carbon $before): int;
+}
+```
 
 ---
 
-## 10. Out of Scope (không làm trong MVP)
+## 📝 Context: What Data to Pass?
 
-- **Real-time WebSocket / Laravel Echo** — Polling là đủ cho MVP
-- **Push notification (mobile)** — Không có app mobile
-- **Email fallback** — Mail Service xử lý riêng, không gộp
+Each event type needs specific context. Pass it as array:
+
+```php
+// task.assigned context
+[
+    'task_id'     => 123,
+    'task_title'  => 'Fix login bug',
+    'actor_name'  => 'Alice',
+    'assignee_id' => 5,
+]
+
+// tenant.member_removed context
+[
+    'removed_user_id'   => 7,
+    'removed_user_name' => 'Bob',
+    'actor_name'        => 'Alice',
+]
+
+// tenant.role_changed context
+[
+    'target_user_id'   => 5,
+    'target_user_name' => 'Bob',
+    'old_role'         => 'admin',
+    'new_role'         => 'member',
+    'actor_name'       => 'Alice',
+]
+```
+
+---
+
+## ✅ Functional Requirements (What Must Work)
+
+- [ ] FR1: Config can enable/disable each event type via `.env`
+- [ ] FR2: Handler resolves title and URL from context
+- [ ] FR3: Simple events use GenericHandler (from config template)
+- [ ] FR4: Complex events use BaseHandler (DB queries for recipients)
+- [ ] FR5: Notifications saved to DB asynchronously (queue)
+- [ ] FR6: Bell icon shows unread count
+- [ ] FR7: Dropdown shows 10 latest notifications
+- [ ] FR8: Click notification → mark read + go to resource
+- [ ] FR9: Notifications scoped to current tenant
+- [ ] FR10: Can mark single as read, or mark all read
+
+---
+
+## 🚀 Non-Functional Requirements (Performance, Quality)
+
+| Requirement | Target |
+|---|---|
+| **Queue latency** | Write notification ≤ 5ms (async via queue) |
+| **Unread count query** | ≤ 10ms (use index) |
+| **Test isolation** | Use `NullNotificationService` (no DB hit in tests) |
+| **Retry logic** | 3 retries with 60s backoff if job fails |
+| **Auto-cleanup** | Delete notifications > 30 days old daily |
+| **Multi-tenant safety** | User can only see notifications for current tenant |
+
+---
+
+## 🚫 Out of Scope (We DON'T do this)
+
+- **Real-time WebSocket** — Polling with Livewire is enough
+- **Push notifications (mobile)** — No mobile app yet
+- **Email fallback** — Mail Service handles that separately
 - **Notification preferences per user** — Phase 2
-- **Notification grouping** ("5 tasks assigned to you") — Phase 2
-- **Read receipts / delivery status** — Phase 2
+- **Grouping** — "5 tasks assigned to you" vs 5 separate → Phase 2
+
+---
+
+## 🔄 Multi-Tenant Scoping
+
+**Rule:** User can only see notifications for their current tenant
+
+```php
+// User switches tenant via dropdown
+// ↓
+// Livewire component re-mounts
+// ↓
+// Queries notifications WHERE user_id=5 AND tenant_id=3  (new tenant)
+// ↓
+// Badge and dropdown show only notifications for tenant 3
+```
+
+---
+
+## 🧪 Success Criteria (Test These)
+
+- [ ] When task assigned → notification created in DB
+- [ ] Unread count correct: 3 unread → badge shows "3"
+- [ ] Click notification → user redirected to correct resource
+- [ ] Mark all as read → all notifications updated is_read=true
+- [ ] Switch tenant → see only that tenant's notifications
+- [ ] Disable event in .env → no notifications created
+- [ ] Test with `NullNotificationService` → no DB queries
+
+---
+
+## 📚 Next Step
+
+Read [02-architecture.md](./02-architecture.md) to understand:
+- How handlers work
+- GenericHandler vs BaseHandler difference
+- How data flows through system
