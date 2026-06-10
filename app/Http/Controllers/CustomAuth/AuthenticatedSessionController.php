@@ -1,7 +1,7 @@
 <?php 
 
 namespace App\Http\Controllers\CustomAuth; 
-use App\Http\Requests\LoginRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request; 
 
@@ -16,7 +16,7 @@ class AuthenticatedSessionController{
             'password' => $request->password, 
         ]; 
 
-        if(Auth::attempt($credentials)){
+        if(Auth::attempt($credentials, true)){
             $request->session()->regenerate(); 
             return redirect()->intended(route('dashboard', absolute: false));
         }
