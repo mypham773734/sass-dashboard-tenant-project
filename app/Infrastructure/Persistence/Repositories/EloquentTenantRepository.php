@@ -114,7 +114,7 @@ class EloquentTenantRepository implements TenantRepositoryInterface
 
     public function attachUser(int $tenantId, int $userId, string $role): void
     {
-        $cacheTag = "user:{$userId}:tenants"; 
+        $cacheTag = "user:{$userId}:tenants";
         Tenant::withoutGlobalScopes()
             ->findOrFail($tenantId)
             ->users()
@@ -123,9 +123,20 @@ class EloquentTenantRepository implements TenantRepositoryInterface
         Cache::tags([$cacheTag])->flush();
     }
 
+    public function detachUser(int $tenantId, int $userId): void
+    {
+        $cacheTag = "user:{$userId}:tenants";
+        Tenant::withoutGlobalScopes()
+            ->findOrFail($tenantId)
+            ->users()
+            ->detach($userId);
+
+        Cache::tags([$cacheTag])->flush();
+    }
+
     public function detachAllUsers(int $tenantId): void
     {
-        $cacheTag = "tenant:{$tenantId}"; 
+        $cacheTag = "tenant:{$tenantId}";
 
         $tenant  = Tenant::withoutGlobalScopes()->findOrFail($tenantId);
         $userIds = $tenant->users()->pluck('users.id');
@@ -133,7 +144,7 @@ class EloquentTenantRepository implements TenantRepositoryInterface
         $tenant->users()->detach();
 
         foreach ($userIds as $userId) {
-            $cacheTagUserId = "user:{$userId}:tenants"; 
+            $cacheTagUserId = "user:{$userId}:tenants";
             Cache::tags([$cacheTagUserId])->flush();
         }
 
@@ -147,6 +158,28 @@ class EloquentTenantRepository implements TenantRepositoryInterface
             ->users()
             ->where('users.id', $userId)
             ->exists();
+    }
+
+    public function getUserRole(int $tenantId, int $userId): ?string
+    {
+        return Tenant::withoutGlobalScopes()
+            ->findOrFail($tenantId)
+            ->users()
+            ->where('users.id', $userId)
+            ->first()
+            ?->pivot
+            ?->role;
+    }
+
+    public function updateUserRole(int $tenantId, int $userId, string $newRole): void
+    {
+        $cacheTag = "user:{$userId}:tenants";
+        Tenant::withoutGlobalScopes()
+            ->findOrFail($tenantId)
+            ->users()
+            ->updateExistingPivot($userId, ['role' => $newRole]);
+
+        Cache::tags([$cacheTag])->flush();
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────

@@ -32,7 +32,13 @@ interface TenantRepositoryInterface
 
     public function attachUser(int $tenantId, int $userId, string $role): void;
 
+    public function detachUser(int $tenantId, int $userId): void;
+
     public function detachAllUsers(int $tenantId): void;
 
     public function hasUser(int $tenantId, int $userId): bool;
+
+    public function getUserRole(int $tenantId, int $userId): ?string;
+
+    public function updateUserRole(int $tenantId, int $userId, string $newRole): void;
 }

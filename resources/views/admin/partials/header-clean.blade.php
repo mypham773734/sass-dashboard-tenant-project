@@ -7,11 +7,11 @@
             </button>
         </div>
         <div>
-            <h2 class="text-xl font-bold text-slate-800">Dashboard</h2>
+            <h2 class="text-xl font-bold text-slate-800">{{ __('Dashboard') }}</h2>
             <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                <span>Home</span>
+                <span>{{ __('Home') }}</span>
                 <i class="fas fa-chevron-right text-[10px]"></i>
-                <span class="font-medium text-indigo-600">Overview</span>
+                <span class="font-medium text-indigo-600">{{ __('Overview') }}</span>
             </div>
         </div>
     </div>
@@ -21,30 +21,28 @@
         @if(session('message'))
         <p>{{ session('message') }}</p>
         @endif
+        
         <livewire:tenant-switcher />
+        
         <!-- Search bar (desktop) -->
         <div class="hidden md:flex items-center bg-slate-50 rounded-full px-4 py-2 gap-2 border border-slate-200">
             <i class="fas fa-search text-slate-400 text-sm"></i>
-            <input type="text" placeholder="Search projects..." class="bg-transparent text-sm border-none outline-none w-48 placeholder:text-slate-400 focus:shadow-none">
+            <input type="text" placeholder="{{ __('Search projects...') }}" class="bg-transparent text-sm border-none outline-none w-48 placeholder:text-slate-400 focus:shadow-none">
         </div>
+        
         <!-- Notification bell -->
         <button class="relative text-slate-500 hover:text-indigo-600 transition">
             <i class="far fa-bell text-xl"></i>
             <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-bold">3</span>
         </button>
 
-        <!-- User profile menu -->
-    @php
-        $authUser  = auth()->user();
-        $initials  = strtoupper(substr($authUser->name, 0, 1))
-                   . strtoupper(substr(strrchr($authUser->name, ' ') ?: ' x', 1, 1));
-        $avatarVal = $authUser->avatar;
-    @endphp
-        {{-- <div class="w-9 h-9 min-w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-semibold text-sm shadow">
-            JD
-        </div> --}}
-
-        <div class="p-4 border-t border-slate-100 mt-auto">
+        <!-- User profile avatar -->
+        @php
+            $authUser  = auth()->user();
+            $initials  = strtoupper(substr($authUser->name, 0, 1))
+                       . strtoupper(substr(strrchr($authUser->name, ' ') ?: ' x', 1, 1));
+            $avatarVal = $authUser->avatar;
+        @endphp
         <a href="{{ route('profile.show') }}" class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
             @if($avatarVal)
                 <img src="{{ asset('storage/' . $avatarVal) }}"
@@ -56,6 +54,5 @@
                 </div>
             @endif
         </a>
-    </div>
     </div>
 </header>

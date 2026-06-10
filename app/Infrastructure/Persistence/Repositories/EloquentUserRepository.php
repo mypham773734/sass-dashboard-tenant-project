@@ -83,15 +83,23 @@ class EloquentUserRepository implements UserRepositoryInterface
                     ]))->all(),
                 ];
             });
-        $items = collect($cached['items'])->map(fn (array $row) => $this->toEntityFromArray($row)); 
+        $items = collect($cached['items'])->map(fn (array $row) => $this->toEntityFromArray($row));
 
         return new LengthAwarePaginator(
-            $items, 
-            $cached['total'], 
-            $cached['per_page'], 
-            $cached['current_page'], 
+            $items,
+            $cached['total'],
+            $cached['per_page'],
+            $cached['current_page'],
             ['path' => request()->url(), 'query' => request()->query()]
-        ); 
+        );
+    }
+
+    public function findAdminsByTenant(int $tenantId): array
+    {
+        return User::whereHas('tenants', function ($query) use ($tenantId) {
+            $query->where('tenants.id', $tenantId)
+                  ->where('tenant_user.role', 'admin');
+        })->pluck('users.id')->toArray();
     }
 
     private function toEntity(User $model): UserEntity
@@ -136,13 +144,13 @@ class EloquentUserRepository implements UserRepositoryInterface
 
         return new UserEntity(
             id:        $data['id'],
-            name:      $model['name'],
-            email:     $model['email'],
+            name:      $data['name'],
+            email:     $data['email'],
             phone:     $phone,
             avatar:    $avatar,
             avatarUrl: $avatar ? asset('storage/' . $avatar) : null,
             tenants:   [],
-            role: []
+            role: '', 
         );
     }
 }

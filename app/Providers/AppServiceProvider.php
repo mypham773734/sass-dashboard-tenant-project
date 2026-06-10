@@ -31,6 +31,10 @@ use App\Domain\User\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Persistence\Repositories\EloquentUserRepository;
 use App\Application\Mail\Contracts\MailServiceInterface;
 use App\Infrastructure\Mail\MailService;
+use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
+use App\Infrastructure\Persistence\Repositories\EloquentNotificationRepository;
+use App\Application\Notification\Contracts\NotificationServiceInterface;
+use App\Infrastructure\Notifications\NotificationService;
 use App\Shared\Tenant\TenantContext;
 use App\Shared\Auth\AuthContext;
 
@@ -91,6 +95,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             MailServiceInterface::class,
             MailService::class,
+        );
+
+        $this->app->bind(
+            NotificationRepositoryInterface::class,
+            EloquentNotificationRepository::class,
+        );
+
+        $this->app->bind(
+            NotificationServiceInterface::class,
+            NotificationService::class,
         );
 
         Event::listen(Login::class,  [AuthAuditListener::class, 'handleLogin']);
