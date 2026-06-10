@@ -13,7 +13,6 @@ use App\Models\Scopes\TenantScope;
  * @property string      $slug
  * @property bool        $is_active
  * @property string|null $trial_ends_at
- * @property string|null $settings
  */
 class Tenant extends Model
 {
@@ -23,7 +22,6 @@ class Tenant extends Model
         'slug',
         'is_active',
         'trial_ends_at',
-        // 'settings',
     ];
 
     public static function booted(){
