@@ -4,6 +4,15 @@
 
 ---
 
+## Where Docs Go
+
+| Folder | Purpose |
+|---|---|
+| `docs/plan/` | Feature/refactor **plans** (design docs written before implementation) |
+| `docs/product/<feature>/` | Finalized feature docs (readme, requirements, architecture, implementation steps) |
+
+When asked to "lên plan" (create a plan) for a feature or refactor, save it to `docs/plan/<feature-name>.md` (lowercase kebab-case).
+
 ## Documentation Files & Folders
 
 All `.md` files and folder names in `docs/` and `.claude/rules/` must be **lowercase**:
