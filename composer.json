@@ -9,10 +9,12 @@
         "php": "^8.3",
         "laravel/ai": "^0.6.7",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.2",
         "predis/predis": "^3.5",
+        "pusher/pusher-php-server": "*",
         "spatie/laravel-permission": "^7.3"
     },
     "require-dev": {

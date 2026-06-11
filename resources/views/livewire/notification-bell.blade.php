@@ -1,4 +1,4 @@
-<div class="relative" wire:poll.5s="refresh">
+<div class="relative">
     {{-- Bell Button with Badge --}}
     <button
         wire:click="toggleDropdown"

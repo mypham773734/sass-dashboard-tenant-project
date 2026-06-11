@@ -5,6 +5,8 @@ namespace App\Infrastructure\Notifications\Jobs;
 use App\Application\Notification\Contracts\NotificationHandlerInterface;
 use App\Application\Notification\DTOs\CreateNotificationDTO;
 use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
+use App\Infrastructure\Notifications\Events\NotificationCreated;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -35,7 +37,7 @@ class WriteNotificationJob implements ShouldQueue
         $handler = $this->resolveHandler();
         $dto     = $handler->handle($this->tenantId, $this->context);
 
-        $repo->createForUser(
+        $entity = $repo->createForUser(
             new CreateNotificationDTO(
                 event: $dto->event,
                 title: $dto->title,
@@ -46,6 +48,16 @@ class WriteNotificationJob implements ShouldQueue
             userId:   $this->userId,
             tenantId: $this->tenantId,
         );
+
+        broadcast(new NotificationCreated(
+            notificationId: $entity->id,
+            userId:         $this->userId,
+            tenantId:       $this->tenantId,
+            title:          $entity->title,
+            body:           $entity->body,
+            url:            $entity->url,
+            createdAt:      Carbon::parse($entity->createdAt),
+        ));
     }
 
     private function resolveHandler(): NotificationHandlerInterface

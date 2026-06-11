@@ -11,6 +11,8 @@ class NotificationBell extends Component
     public int $unreadCount = 0;
     public array $notifications = [];
     public bool $isOpen = false;
+    public int $userId = 0;
+    public int $tenantId = 0;
 
     public function __construct(
         private readonly NotificationRepositoryInterface $notificationRepository,
@@ -20,13 +22,21 @@ class NotificationBell extends Component
 
     public function mount(): void
     {
+        $authId = authContext()->getId(); 
+        $this->userId = $authId ?? 0;
+        $this->tenantId = tenantContext()->getId() ?? 0;
         $this->refresh();
     }
 
-    #[On('notification-added')]
+    #[On('echo-private:tenant.{tenantId}.user.{userId},notification-created')]
+    public function onNotificationCreated($data): void
+    {
+        $this->refresh();
+    }
+
     public function refresh(): void
     {
-        $userId = auth()->id();
+        $userId = authContext()->getId(); 
         $tenantId = tenantContext()->getId();
 
         if (!$userId || !$tenantId) {

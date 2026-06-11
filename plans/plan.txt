@@ -3,6 +3,7 @@ tính năng import export ở project tích hợp queue
 
 Xây dựng tính năng welcome khi register thành công 
 Notification 
+  ↳ Real-time (WebSocket) — design docs: docs/product/realtime-broadcasting/
 chat realtime
 
 
@@ -12,3 +13,6 @@ Refactor lại switch-tenant
 
 build setting feature theo Tenant
 export task 
+
+
+Refactor lại structure database

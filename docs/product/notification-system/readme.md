@@ -234,5 +234,6 @@ A: Read [02-architecture.md § Why Custom Service](./02-architecture.md#1-design
 
 ## 📖 Related Docs
 
+- [Real-Time Broadcasting](../realtime-broadcasting/readme.md) — WebSocket infrastructure for instant notifications (next phase)
 - [Mail Service](../mail-service/readme.md) — Email notifications (different from in-app)
 - [Audit System](../audit-system/readme.md) — Audit log (different from notifications)
