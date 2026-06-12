@@ -62,10 +62,10 @@
 
         
         <!-- Settings -->
-        <x-sidebar-link route="#">
+        {{-- <x-sidebar-link route="#">
             <i class="fas fa-cog w-5"></i>
             <span>Settings</span>
-        </x-sidebar-link>
+        </x-sidebar-link> --}}
         
         <!-- Audit Log — chỉ owner/admin mới thấy -->
         @php 
