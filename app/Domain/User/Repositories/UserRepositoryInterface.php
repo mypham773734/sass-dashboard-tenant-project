@@ -3,6 +3,7 @@
 namespace App\Domain\User\Repositories;
 
 use App\Domain\User\Entities\UserEntity;
+use App\Application\User\DTOs\CreateUserDTO; 
 
 interface UserRepositoryInterface
 {
@@ -19,4 +20,8 @@ interface UserRepositoryInterface
     public function getAllSystemUser(int $perPage);
 
     public function findAdminsByTenant(int $tenantId): array;
+
+    public function getSystemAdmin();
+
+    public function create(CreateUserDTO $createUserDTO):UserEntity; 
 }

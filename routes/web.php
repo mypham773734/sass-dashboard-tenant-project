@@ -6,13 +6,17 @@ use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\TenantSettingController;
 use App\Http\Controllers\CustomAuth\AuthenticatedSessionController;
-use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\NotificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TaskController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\CheckRoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Setup\SetupController; 
 
+Route::get('/', function(){
+    return to_route('dashboard');  
+}); 
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -58,3 +62,6 @@ Route::middleware('auth')->group(function () {
 
 // Debug permission 
 Route::get('/check-role', [CheckRoleController::class, 'index'])->name('check-role');
+
+// Setup project
+Route::get('/setup', [SetupController::class, 'setup'])->name('setup.project')->middleware('checkSystemAdminNotExists'); 

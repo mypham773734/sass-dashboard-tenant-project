@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
+use App\Http\Controllers\Controller;
 use Illuminate\View\View;
 
 class NotificationController extends Controller

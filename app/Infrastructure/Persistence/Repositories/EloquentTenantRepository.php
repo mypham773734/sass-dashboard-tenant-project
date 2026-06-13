@@ -192,7 +192,7 @@ class EloquentTenantRepository implements TenantRepositoryInterface
             slug:        $data['slug'],
             isActive:    (bool) $data['is_active'],
             trialEndsAt: $data['trial_ends_at'] ? new \DateTime($data['trial_ends_at']) : null,
-            settings:    $data['settings'],
+            settings:    $data['settings'] ?? [],
         );
     }
 

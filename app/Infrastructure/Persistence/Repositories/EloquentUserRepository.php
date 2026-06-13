@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\UserMeta;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Pagination\LengthAwarePaginator; 
+use App\Application\User\DTOs\CreateUserDTO; 
+use App\Domain\User\Enums\RoleEnum; 
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
@@ -92,6 +94,18 @@ class EloquentUserRepository implements UserRepositoryInterface
             $cached['current_page'],
             ['path' => request()->url(), 'query' => request()->query()]
         );
+    }
+
+    public function getSystemAdmin(){
+        $systemAdminRole = RoleEnum::SYSTEM_ADMIN->value; 
+        return User::whereHas('roles', function($q) use ($systemAdminRole){
+            return $q->where('name', $systemAdminRole); 
+        })->first(); 
+    }
+
+    public function create(CreateUserDTO $dto):UserEntity{
+        $model = User::create($dto->toArray()); 
+        return $this->toEntityFromArray($model->toArray());
     }
 
     public function findAdminsByTenant(int $tenantId): array

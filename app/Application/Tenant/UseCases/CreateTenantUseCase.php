@@ -16,7 +16,7 @@ class CreateTenantUseCase
         private readonly MailServiceInterface      $mailService,
     ) {}
 
-    public function execute(CreateTenantDTO $dto, int $creatorUserId): TenantEntity
+    public function execute(CreateTenantDTO $dto, int $creatorUserId, $roleAttach = 'owner'): TenantEntity
     {
         $entity = new TenantEntity(
             id:          null,
@@ -29,7 +29,7 @@ class CreateTenantUseCase
         $created = $this->tenantRepository->create($entity);
 
         // Business rule: the creator is always the first admin of the tenant.
-        $this->tenantRepository->attachUser($created->id, $creatorUserId, 'admin');
+        $this->tenantRepository->attachUser($created->id, $creatorUserId, $roleAttach);
 
         $creator = $this->userRepository->findById($creatorUserId);
 

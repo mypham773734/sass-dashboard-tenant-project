@@ -18,6 +18,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
+    private const string RoleSystemAdmin = 'systemAdmin'; 
+
     protected function casts(): array
     {
         return [
@@ -73,7 +75,7 @@ class User extends Authenticatable
             ->isNotEmpty();
     }
 
-    public function isSupperAdmin(){
-        
+    public function isSystemAdmin(){
+        return $this->roles()->where('name', self::RoleSystemAdmin)->first(); 
     }
 }

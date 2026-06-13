@@ -6,8 +6,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Console\Commands\SendScheduledEmailsCommand;
 use App\Http\Middleware\ChooseCurrentTenant;
 use App\Http\Middleware\SetDefaultTenant;
-use Illuminate\Support\LazyCollection;
-use Illuminate\Cache\RateLimiting\Limit;
+use App\Http\Middleware\CheckSystemAdminNotExists; 
+
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'chooseTenant' => ChooseCurrentTenant::class,
+            'checkSystemAdminNotExists' => CheckSystemAdminNotExists::class
         ]);
 
         $middleware->appendToGroup('web', SetDefaultTenant::class);
