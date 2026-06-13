@@ -3,6 +3,7 @@
 use App\Domain\User\Enums\RoleEnum; 
 
 return [
+    RoleEnum::SYSTEM_ADMIN->value => [], 
     RoleEnum::OWNER->value => [
         'tenant:view',
         'tenant:edit',

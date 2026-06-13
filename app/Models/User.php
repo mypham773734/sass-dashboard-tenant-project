@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Domain\User\Enums\RoleEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,8 +19,6 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
-
-    private const string RoleSystemAdmin = 'systemAdmin'; 
 
     protected function casts(): array
     {
@@ -76,6 +76,7 @@ class User extends Authenticatable
     }
 
     public function isSystemAdmin(){
-        return $this->roles()->where('name', self::RoleSystemAdmin)->first(); 
+        $systemAdminRole = RoleEnum::SYSTEM_ADMIN->value; 
+        return $this->roles()->where('name', $systemAdminRole)->first(); 
     }
 }

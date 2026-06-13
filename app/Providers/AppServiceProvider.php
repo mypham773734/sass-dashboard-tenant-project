@@ -39,6 +39,8 @@ use App\Shared\Tenant\TenantContext;
 use App\Shared\Auth\AuthContext;
 use App\Domain\TenantSetting\Repositories\TenantSettingRepositoryInterface;
 use App\Infrastructure\Persistence\Repositories\EloquentTenantSettingRepository;
+use App\Domain\Role\Repositories\RoleRepositoryInterface; 
+use App\Infrastructure\Persistence\Repositories\EloquentRoleRepository; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -112,6 +114,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             NotificationServiceInterface::class,
             NotificationService::class,
+        );
+
+        $this->app->bind(
+            RoleRepositoryInterface::class,
+            EloquentRoleRepository::class,
         );
 
         Event::listen(Login::class,  [AuthAuditListener::class, 'handleLogin']);

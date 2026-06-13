@@ -16,3 +16,7 @@ export task
 
 
 Refactor lại structure database
+
+Refactor lại create tenant usecase
+- cần attach role
+- cần init bộ role permission default

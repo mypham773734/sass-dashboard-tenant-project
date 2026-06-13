@@ -65,3 +65,10 @@ Route::get('/check-role', [CheckRoleController::class, 'index'])->name('check-ro
 
 // Setup project
 Route::get('/setup', [SetupController::class, 'setup'])->name('setup.project')->middleware('checkSystemAdminNotExists'); 
+
+Route::get('/test', function(){
+    $role = app(\App\Domain\Role\Repositories\RoleRepositoryInterface::class)
+            ->findByNameAndTenant('owner', 5);
+
+    echo json_encode($role); 
+}); 

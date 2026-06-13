@@ -112,13 +112,13 @@ class EloquentTenantRepository implements TenantRepositoryInterface
         return $result;
     }
 
-    public function attachUser(int $tenantId, int $userId, string $role): void
+    public function attachUserWithTenant(int $tenantId, int $userId): void
     {
         $cacheTag = "user:{$userId}:tenants";
         Tenant::withoutGlobalScopes()
             ->findOrFail($tenantId)
             ->users()
-            ->attach($userId, ['role' => $role]);
+            ->attach($userId);
 
         Cache::tags([$cacheTag])->flush();
     }
@@ -158,28 +158,6 @@ class EloquentTenantRepository implements TenantRepositoryInterface
             ->users()
             ->where('users.id', $userId)
             ->exists();
-    }
-
-    public function getUserRole(int $tenantId, int $userId): ?string
-    {
-        return Tenant::withoutGlobalScopes()
-            ->findOrFail($tenantId)
-            ->users()
-            ->where('users.id', $userId)
-            ->first()
-            ?->pivot
-            ?->role;
-    }
-
-    public function updateUserRole(int $tenantId, int $userId, string $newRole): void
-    {
-        $cacheTag = "user:{$userId}:tenants";
-        Tenant::withoutGlobalScopes()
-            ->findOrFail($tenantId)
-            ->users()
-            ->updateExistingPivot($userId, ['role' => $newRole]);
-
-        Cache::tags([$cacheTag])->flush();
     }
 
     // ── Mapping helpers ───────────────────────────────────────────────────────

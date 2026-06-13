@@ -85,6 +85,6 @@ class SetupAppUseCase{
             throw new \DomainException('Tenant or user id is missing.');
         }
 
-        $this->tenantRepository->attachUser($tenant->id, $user->id, RoleEnum::SYSTEM_ADMIN->value);
+        $this->tenantRepository->attachUserWithTenant($tenant->id, $user->id);
     }
 }

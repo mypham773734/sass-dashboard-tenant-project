@@ -29,7 +29,7 @@ class CreateTenantUseCase
         $created = $this->tenantRepository->create($entity);
 
         // Business rule: the creator is always the first admin of the tenant.
-        $this->tenantRepository->attachUser($created->id, $creatorUserId, $roleAttach);
+        $this->tenantRepository->attachUserWithTenant($created->id, $creatorUserId);
 
         $creator = $this->userRepository->findById($creatorUserId);
 

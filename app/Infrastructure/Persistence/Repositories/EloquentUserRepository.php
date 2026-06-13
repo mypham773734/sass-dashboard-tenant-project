@@ -108,12 +108,15 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $this->toEntityFromArray($model->toArray());
     }
 
+    // Find User has role admin
     public function findAdminsByTenant(int $tenantId): array
     {
-        return User::whereHas('tenants', function ($query) use ($tenantId) {
-            $query->where('tenants.id', $tenantId)
-                  ->where('tenant_user.role', 'admin');
-        })->pluck('users.id')->toArray();
+        $adminRole = RoleEnum::ADMIN->value; 
+        $ownerRole = RoleEnum::OWNER->value; 
+
+        return User::whereHas('roles', function($q) use ($tenantId, $ownerRole, $adminRole) {
+            $q->where('tenant_id', $tenantId)->whereIn('name',[$adminRole, $ownerRole]); 
+        })->pluck('id')->toArray(); 
     }
 
     private function toEntity(User $model): UserEntity
