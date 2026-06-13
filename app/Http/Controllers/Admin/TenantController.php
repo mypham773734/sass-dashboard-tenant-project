@@ -9,7 +9,8 @@ use App\Application\Tenant\UseCases\{
     DeleteTenantUseCase,
     FindTenantBySlugUseCase,
     GetPaginatedTenantsUseCase,
-    UpdateTenantUseCase
+    UpdateTenantUseCase, 
+    SetupDefaultTenantRolesAndPermissionsUseCase, 
 };
 use App\Application\User\UseCases\ChangeTenantSelectedUseCase;
 use App\Http\Requests\Tenant\{
@@ -17,7 +18,8 @@ use App\Http\Requests\Tenant\{
     StoreTenantRequest
 };
 use App\Application\Tenant\DTOs\CreateTenantDTO;
-use App\Application\Tenant\DTOs\UpdateTenantDTO; 
+use App\Application\Tenant\DTOs\UpdateTenantDTO;
+use App\Models\Tenant;
 
 class TenantController extends Controller
 {
@@ -28,12 +30,17 @@ class TenantController extends Controller
         private readonly UpdateTenantUseCase        $updateTenantUseCase,
         private readonly DeleteTenantUseCase        $deleteTenantUseCase,
         private readonly ChangeTenantSelectedUseCase $changeTenantSelectedUseCase,
+        private readonly SetupDefaultTenantRolesAndPermissionsUseCase $setupDefaultTenantRolesAndPermissionsUseCase
     ) {}
 
     public function index()
     {
         try {
-            $userId = authContext()->getId(); 
+            $userId = authContext()->getId();
+            $tenant = tenantContext()->getTenant();  
+
+            $this->authorize('viewAny', [Tenant::class, $tenant]); 
+            
             $tenants = $this->getPaginatedTenantsUseCase->execute($userId);
 
             return view('admin.pages.tenant.index', compact('tenants'));
@@ -46,6 +53,9 @@ class TenantController extends Controller
     public function create()
     {
         try {
+            $currentTenantId = tenantContext()->getId(); 
+            $this->authorize('create', [Tenant::class, $currentTenantId]);
+
             return view('admin.pages.tenant.create');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
@@ -56,10 +66,16 @@ class TenantController extends Controller
     public function store(StoreTenantRequest $request)
     {
         try {
-            $dto = CreateTenantDTO::fromArray($request->validated());
-            $userId = authContext()->getId(); 
-            $this->createTenantUseCase->execute($dto, $userId);
+            $tenantId = tenantContext()->getId(); 
+            $userId = authContext()->getId();
+            
+            $this->authorize('store', [Tenant::class, $tenantId]);
 
+            $dto = CreateTenantDTO::fromArray($request->validated());
+            $tenant = $this->createTenantUseCase->execute($dto, $userId);
+
+            $this->setupDefaultTenantRolesAndPermissionsUseCase->execute($tenant); 
+            
             return redirect()
                 ->route('tenant.index')
                 ->with('success', 'Tenant created successfully.');

@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::resource('/tenant', TenantController::class);
+        Route::resource('/tenant', TenantController::class); 
 
         Route::resource('/project', ProjectController::class)->middleware('chooseTenant');
 
@@ -64,11 +64,16 @@ Route::middleware('auth')->group(function () {
 Route::get('/check-role', [CheckRoleController::class, 'index'])->name('check-role');
 
 // Setup project
-Route::get('/setup', [SetupController::class, 'setup'])->name('setup.project')->middleware('checkSystemAdminNotExists'); 
+// Route::get('/setup', [SetupController::class, 'setup'])->name('setup.project')->middleware('checkSystemAdminNotExists'); 
+Route::get('/setup', [SetupController::class, 'setup'])->name('setup.project'); 
 
 Route::get('/test', function(){
     $role = app(\App\Domain\Role\Repositories\RoleRepositoryInterface::class)
             ->findByNameAndTenant('owner', 5);
 
     echo json_encode($role); 
+}); 
+
+Route::get('/save-permission', function(){
+
 }); 

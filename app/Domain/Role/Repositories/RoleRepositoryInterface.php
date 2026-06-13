@@ -6,6 +6,7 @@ use App\Domain\Role\Entities\RoleEntity;
 use App\Domain\Tenant\Entities\TenantEntity; 
 
 interface RoleRepositoryInterface{
+    public function createAndSyncPermission(RoleEntity $roleEntity, array $permissions): ?RoleEntity; 
     public function findByNameAndTenant(string $name, int $tenantId): ?RoleEntity;
 
     /** @return RoleEntity[] */

@@ -1,8 +1,8 @@
 <?php 
 
-namespace App\Domain\Role\Entities; 
+namespace App\Domain\Permission\Entities; 
 
-class RoleEntity{
+class PermissionEntity{
     public function __construct(
         public readonly ?int $id, 
         public readonly string $name, 

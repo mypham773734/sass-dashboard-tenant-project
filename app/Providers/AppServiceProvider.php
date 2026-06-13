@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Policies\ProjectPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\TenantPolicy;
@@ -41,6 +42,8 @@ use App\Domain\TenantSetting\Repositories\TenantSettingRepositoryInterface;
 use App\Infrastructure\Persistence\Repositories\EloquentTenantSettingRepository;
 use App\Domain\Role\Repositories\RoleRepositoryInterface; 
 use App\Infrastructure\Persistence\Repositories\EloquentRoleRepository; 
+use App\Domain\Permission\Repositories\PermissionRepositoryInterface; 
+use App\Infrastructure\Persistence\Repositories\EloquentPermissionRepository; 
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +60,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Task::class, TaskPolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Tenant::class, TenantPolicy::class);
+
+        // system_admin bypasses every policy/ability check across the app.
+        Gate::before(function (User $user, string $ability) {
+            return $user->isSystemAdmin() ? true : null;
+        });
 
 
         // ── Clean Architecture bindings (new) ─────────────────────────────────
@@ -119,6 +127,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             RoleRepositoryInterface::class,
             EloquentRoleRepository::class,
+        );
+
+        $this->app->bind(
+            PermissionRepositoryInterface::class,
+            EloquentPermissionRepository::class,
         );
 
         Event::listen(Login::class,  [AuthAuditListener::class, 'handleLogin']);

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class TenantSettingController extends Controller
 {
-    private const SECTIONS = ['email', 'notifications', 'localization', 'members'];
+    private const array SECTIONS = ['email', 'notifications', 'localization', 'members'];
 
     public function __construct(
         private readonly GetTenantSettingsUseCase $getUseCase,

@@ -7,6 +7,10 @@ use App\Models\User;
 
 class TenantPolicy
 {
+
+    public function viewAny(User $user, Tenant $tenant){
+        return $user->hasPermissionInTenant('tenant:view', $tenant->id);
+    }   
     public function view(User $user, Tenant $tenant): bool
     {
         return $user->hasPermissionInTenant('tenant:view', $tenant->id);
@@ -35,5 +39,10 @@ class TenantPolicy
     public function viewAuditLog(User $user, Tenant $tenant): bool
     {
         return $user->isAdminOfTenant($tenant->id);
+    }
+
+    public function create(User $user, int $tenantId): bool
+    {
+        return $user->hasPermissionInTenant('tenant:create', $tenantId);
     }
 }

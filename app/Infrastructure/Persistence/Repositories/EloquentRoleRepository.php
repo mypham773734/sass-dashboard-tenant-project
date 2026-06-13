@@ -10,6 +10,13 @@ use App\Models\User;
 
 class EloquentRoleRepository implements RoleRepositoryInterface
 {
+    public function createAndSyncPermission(RoleEntity $roleEntity, array $permissions): ?RoleEntity{
+        $role = Role::createOrFirst($this->toArray($roleEntity)); 
+        $role->syncPermissions($permissions); 
+
+        return $role ? $this->toEntity($role) : null; 
+    }
+
     public function findByNameAndTenant(string $name, int $tenantId): ?RoleEntity
     {
         $role = Role::where('name', $name)
@@ -71,6 +78,16 @@ class EloquentRoleRepository implements RoleRepositoryInterface
             guardName: $model->guard_name,
             tenantId: $model->tenant_id,
         );
+    }
+    
+
+    private function toArray(RoleEntity $roleEntity){
+        return [
+            'id' => $roleEntity->id, 
+            'name' => $roleEntity->name, 
+            'guard_name' => $roleEntity->guardName, 
+            'tenant_id' => $roleEntity->tenantId, 
+        ];  
     }
 }
 

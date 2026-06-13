@@ -6,7 +6,10 @@ return [
     RoleEnum::SYSTEM_ADMIN->value => [], 
     RoleEnum::OWNER->value => [
         'tenant:view',
+        'tenant:create',
+        'tenant:store',
         'tenant:edit',
+        'tenant:update',
         'tenant:delete',
         'tenant:invite_user',
         'tenant:remove_user',

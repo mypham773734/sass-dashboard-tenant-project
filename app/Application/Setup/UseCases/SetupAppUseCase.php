@@ -13,7 +13,7 @@ use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Domain\Tenant\Entities\TenantEntity; 
 use App\Application\Tenant\UseCases\SetupDefaultTenantRolesAndPermissionsUseCase;
 use App\Models\Role;
-use Dom\Entity;
+use App\Domain\Role\Repositories\RoleRepositoryInterface; 
 
 class SetupAppUseCase{
     private array $dataSetupDefault = [
@@ -30,10 +30,12 @@ class SetupAppUseCase{
     public function __construct(
         private readonly UserRepositoryInterface $userRepository, 
         private readonly TenantRepositoryInterface $tenantRepository, 
-        private readonly SetupDefaultTenantRolesAndPermissionsUseCase $setupRolePermissionUseCase
+        private readonly SetupDefaultTenantRolesAndPermissionsUseCase $setupRolePermissionUseCase, 
+        private readonly RoleRepositoryInterface $roleRepository
     ){}
 
     public function execute(){
+        $systemAdminRole = RoleEnum::SYSTEM_ADMIN->value; 
         // Create User
         $user = $this->createUser();  
 
@@ -41,10 +43,10 @@ class SetupAppUseCase{
         $tenant = $this->createTenant();
 
         // Create Role Default 
-        $resultCreateRolePermissionDefault = $this->createRolePermissionDefault($tenant); 
+        $this->createRolePermissionDefault($tenant); 
 
         // Attach user role system admin
-        $this->attchUserTenantWithRole($user, $tenant); 
+        $this->attachUserTenantWithRole($user, $tenant, $systemAdminRole); 
     }
 
 
@@ -79,12 +81,16 @@ class SetupAppUseCase{
         return $this->setupRolePermissionUseCase->execute($tenant); 
     }
 
-    private function attchUserTenantWithRole(UserEntity $user, TenantEntity $tenant): void
+    private function attachUserTenantWithRole(UserEntity $user, TenantEntity $tenant, string $roleName): void
     {
-        if ($tenant->id === null || $user->id === null) {
+        $userId = $user->id;
+        $tenantId = $tenant->id;
+
+        if ($tenantId === null || $userId === null) {
             throw new \DomainException('Tenant or user id is missing.');
         }
 
-        $this->tenantRepository->attachUserWithTenant($tenant->id, $user->id);
+        $this->tenantRepository->attachUserWithTenant($tenantId, $userId);
+        $this->roleRepository->assignUserRole($userId, $tenantId, $roleName); 
     }
 }
